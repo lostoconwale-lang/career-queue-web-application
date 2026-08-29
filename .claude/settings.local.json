@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm add skill)",
+      "Bash(npx skills add https://github.com/nexu-io/open-design --skill emilkowalski-motion)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
