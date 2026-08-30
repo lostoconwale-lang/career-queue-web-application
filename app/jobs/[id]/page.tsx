@@ -1,12 +1,14 @@
 import { cache } from "react";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 
 import Footer from "@/app/_components/Footer";
 import Nav from "@/app/_components/Nav";
 import { Buildings, Clock } from "@/app/_components/Icons";
 import { CompanyLogo } from "@/app/_components/jobs/CompanyLogo";
+import { ApplyButton } from "@/app/jobs/[id]/ApplyButton";
 import { BackToResults } from "@/app/jobs/[id]/BackToResults";
+import { auth } from "@/lib/auth/nextauth";
 import { connectToDatabase } from "@/lib/db/mongoose";
 import { getPublicJobById } from "@/lib/services/public-job.service";
 import { formatRelativeTime } from "@/lib/date";
@@ -36,6 +38,9 @@ export async function generateMetadata({
 // Server-rendered: fetches directly through the service layer (no HTTP round
 // trip to our own API, since this already runs on the server).
 export default async function JobDetailPage({ params }: { params: Promise<Params> }) {
+  const session = await auth();
+  if (!session?.user?.id) redirect("/login");
+
   const { id } = await params;
   const job = await loadJob(id);
   if (!job) notFound();
@@ -120,17 +125,11 @@ export default async function JobDetailPage({ params }: { params: Promise<Params
                   Apply for this role
                 </h2>
                 <p className="text-muted mx-auto mt-2 max-w-md text-sm leading-relaxed">
-                  The application flow is being built. In the meantime this is where you&apos;d
-                  submit your details for {job.title}
-                  {job.company ? ` at ${job.company.name}` : ""}.
+                  Ready to apply for {job.title}
+                  {job.company ? ` at ${job.company.name}` : ""}? You&apos;ll confirm before
+                  anything is sent.
                 </p>
-                <button
-                  type="button"
-                  disabled
-                  className="bg-brand text-surface shadow-soft mt-5 rounded-full px-7 py-3 text-sm font-semibold opacity-60"
-                >
-                  Apply now
-                </button>
+                <ApplyButton job={job} />
               </div>
             </div>
           </div>

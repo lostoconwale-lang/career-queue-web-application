@@ -7,6 +7,7 @@ export const ACTIVITY_LOG_TYPES = [
   "job-type",
   "job",
   "company",
+  "job-application",
   "testimonial",
   "faq",
   "static-page",

@@ -11,6 +11,7 @@ import type { UpdateCategoryBody } from "@/lib/validators/category.validator";
 import type { UpdateCityBody } from "@/lib/validators/city.validator";
 import type { UpdateCompanyBody } from "@/lib/validators/company.validator";
 import type { UpdateFaqBody } from "@/lib/validators/faq.validator";
+import type { UpdateJobApplicationBody } from "@/lib/validators/job-application.validator";
 import type { UpdateJobTypeBody } from "@/lib/validators/job-type.validator";
 import type { UpdateJobBody } from "@/lib/validators/job.validator";
 import type { UpdateStaticPageBody } from "@/lib/validators/static-pages.validator";
@@ -23,6 +24,7 @@ import type { CategoryDTO } from "@/types/category";
 import type { CityDTO } from "@/types/city";
 import type { CompanyDTO } from "@/types/company";
 import type { FaqDTO } from "@/types/faq";
+import type { JobApplicationDTO } from "@/types/job-application";
 import type { JobTypeDTO } from "@/types/job-type";
 import type { JobDTO } from "@/types/job";
 import type { MediaDTO } from "@/types/media";
@@ -205,6 +207,34 @@ function categoryChangeMessage(category: CategoryDTO, patch: UpdateCategoryBody)
       : `Removed the icon from the category "${category.name}"`;
   if (patch.seo !== undefined) return `Updated SEO details for the category "${category.name}"`;
   return `Updated the category "${category.name}"`;
+}
+
+// Applications are created by the applicant, not an admin, so there's no
+// logCreated here — only admin-initiated actions (review, soft delete) count
+// as activity for this audit trail.
+export function logJobApplicationUpdated(
+  actor: ActivityActor,
+  application: JobApplicationDTO,
+  patch: UpdateJobApplicationBody,
+): Promise<void> {
+  const who_ = `${application.applicant.name} (${application.applicant.email})`;
+  const message =
+    patch.status !== undefined
+      ? `Marked ${who_}'s application for "${application.job.title}" as ${patch.status}`
+      : `Updated ${who_}'s application for "${application.job.title}"`;
+  return write("job-application", "update", actor, message);
+}
+
+export function logJobApplicationDeleted(
+  actor: ActivityActor,
+  application: JobApplicationDTO,
+): Promise<void> {
+  return write(
+    "job-application",
+    "delete",
+    actor,
+    `Deleted ${application.applicant.name}'s application for "${application.job.title}"`,
+  );
 }
 
 export function logCompanyCreated(actor: ActivityActor, company: CompanyDTO): Promise<void> {

@@ -27,6 +27,7 @@ const TYPE_LABELS: Record<ActivityLogType, string> = {
   "job-type": "Job types",
   job: "Jobs",
   company: "Companies",
+  "job-application": "Applications",
   testimonial: "Testimonials",
   faq: "FAQs",
   "static-page": "Pages",

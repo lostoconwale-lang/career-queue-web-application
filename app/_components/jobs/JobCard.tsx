@@ -1,5 +1,9 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 
+import { ApplyModal } from "@/app/_components/jobs/ApplyModal";
 import { CompanyLogo } from "@/app/_components/jobs/CompanyLogo";
 import { Buildings, Clock } from "@/app/_components/Icons";
 import { formatRelativeTime } from "@/lib/date";
@@ -12,6 +16,7 @@ type Props = {
 };
 
 export function JobCard({ job, view }: Props) {
+  const [applying, setApplying] = useState(false);
   const isGrid = view === "grid";
   const description = htmlToText(job.description);
   const posted = formatRelativeTime(job.createdAt);
@@ -85,12 +90,13 @@ export function JobCard({ job, view }: Props) {
         </p>
 
         <div className={`mt-5 flex gap-2.5 ${isGrid ? "" : "sm:mt-4"}`}>
-          <Link
-            href={`/jobs/${job.id}#apply`}
+          <button
+            type="button"
+            onClick={() => setApplying(true)}
             className="bg-brand text-surface shadow-soft rounded-full px-5 py-2.5 text-sm font-semibold transition-transform hover:-translate-y-0.5 active:translate-y-0"
           >
             Apply
-          </Link>
+          </button>
           <Link
             href={`/jobs/${job.id}`}
             className="border-line text-ink hover:bg-cream rounded-full border px-5 py-2.5 text-sm font-semibold transition-colors"
@@ -99,6 +105,8 @@ export function JobCard({ job, view }: Props) {
           </Link>
         </div>
       </div>
+
+      <ApplyModal job={job} open={applying} onClose={() => setApplying(false)} />
     </article>
   );
 }
