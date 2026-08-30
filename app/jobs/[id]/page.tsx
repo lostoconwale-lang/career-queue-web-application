@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 
@@ -5,11 +6,22 @@ import Footer from "@/app/_components/Footer";
 import Nav from "@/app/_components/Nav";
 import { Buildings, Clock } from "@/app/_components/Icons";
 import { CompanyLogo } from "@/app/_components/jobs/CompanyLogo";
-import { JOBS } from "@/app/jobs/_data";
 import { BackToResults } from "@/app/jobs/[id]/BackToResults";
+import { connectToDatabase } from "@/lib/db/mongoose";
+import { getPublicJobById } from "@/lib/services/public-job.service";
 import { formatRelativeTime } from "@/lib/date";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 type Params = { id: string };
+
+// generateMetadata and the page body both need the job — cache() dedupes the
+// two calls into a single DB query per request.
+const loadJob = cache(async (id: string) => {
+  await connectToDatabase();
+  return getPublicJobById(id);
+});
 
 export async function generateMetadata({
   params,
@@ -17,15 +29,15 @@ export async function generateMetadata({
   params: Promise<Params>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const job = JOBS.find((j) => j.id === id);
+  const job = await loadJob(id);
   return { title: job ? `${job.title} — CareerQueue` : "Job not found — CareerQueue" };
 }
 
-// UI-only for now — reads from the same placeholder data as the listing page.
-// A real version will fetch a single public job by id.
+// Server-rendered: fetches directly through the service layer (no HTTP round
+// trip to our own API, since this already runs on the server).
 export default async function JobDetailPage({ params }: { params: Promise<Params> }) {
   const { id } = await params;
-  const job = JOBS.find((j) => j.id === id);
+  const job = await loadJob(id);
   if (!job) notFound();
 
   const posted = formatRelativeTime(job.createdAt);

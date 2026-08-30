@@ -105,6 +105,9 @@ jobSchema.index({ isActive: 1, isDeleted: 1 });
 jobSchema.index({ "categories._id": 1, isDeleted: 1 });
 jobSchema.index({ "jobTypes._id": 1, isDeleted: 1 });
 jobSchema.index({ "company._id": 1, isDeleted: 1 });
+// Covers the public listing's default query shape (active, non-deleted,
+// newest first) so it's satisfied by an index scan with no in-memory sort.
+jobSchema.index({ isDeleted: 1, isActive: 1, createdAt: -1 });
 
 if (process.env.NODE_ENV !== "production" && models.Job) deleteModel("Job");
 

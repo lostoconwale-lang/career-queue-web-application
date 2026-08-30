@@ -1,31 +1,26 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Route } from "next";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { Filter } from "@/app/_components/Icons";
 import { EmptyState } from "@/app/_components/jobs/EmptyState";
 import { JobCard } from "@/app/_components/jobs/JobCard";
+import { JobCardSkeleton } from "@/app/_components/jobs/JobCardSkeleton";
 import { JobFilters, type JobFiltersState } from "@/app/_components/jobs/JobFilters";
 import { JobPagination } from "@/app/_components/jobs/JobPagination";
 import { JobSearchBar } from "@/app/_components/jobs/JobSearchBar";
 import { MobileFilterDrawer } from "@/app/_components/jobs/MobileFilterDrawer";
 import { ViewToggle, type JobView } from "@/app/_components/jobs/ViewToggle";
-import { htmlToText } from "@/lib/sanitize-html";
-import type { CategoryDTO } from "@/types/category";
-import type { JobTypeDTO } from "@/types/job-type";
-import type { JobDTO } from "@/types/job";
+import { redirectOnDenied } from "@/lib/auth-redirect";
+import type { ApiResponse } from "@/types/api";
+import type { JobFilterOptionsDTO, PublicJobListDTO } from "@/types/public-job";
 
 const PAGE_SIZE = 6;
+const EMPTY_FILTER_OPTIONS: JobFilterOptionsDTO = { categories: [], jobTypes: [] };
 
-type Props = {
-  jobs: JobDTO[];
-  categories: CategoryDTO[];
-  jobTypes: JobTypeDTO[];
-};
-
-export function JobListingPage({ jobs, categories, jobTypes }: Props) {
+export function JobListingPage() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -39,6 +34,13 @@ export function JobListingPage({ jobs, categories, jobTypes }: Props) {
   const [qInput, setQInput] = useState(q);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const resultsRef = useRef<HTMLDivElement>(null);
+
+  const [filterOptions, setFilterOptions] = useState<JobFilterOptionsDTO>(EMPTY_FILTER_OPTIONS);
+  const [filtersError, setFiltersError] = useState<string | null>(null);
+
+  const [listing, setListing] = useState<PublicJobListDTO | null>(null);
+  const [jobsLoading, setJobsLoading] = useState(true);
+  const [jobsError, setJobsError] = useState<string | null>(null);
 
   // Reflects back into the search box if the URL changes from elsewhere (e.g.
   // the browser's back/forward buttons) — adjusted during render rather than
@@ -66,15 +68,8 @@ export function JobListingPage({ jobs, categories, jobTypes }: Props) {
     });
   }
 
-  // Debounced: types update the URL 300ms after the user stops, same as the
-  // admin listing pages.
-  useEffect(() => {
-    const trimmed = qInput.trim();
-    if (trimmed === q) return;
-    const t = setTimeout(() => setSearch(trimmed), 300);
-    return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [qInput]);
+  // Search only runs when the search bar is submitted (button click or
+  // Enter) — typing alone doesn't touch the URL or trigger a fetch.
 
   function toggleCategory(id: string) {
     const next = selectedCategories.includes(id)
@@ -141,44 +136,70 @@ export function JobListingPage({ jobs, categories, jobTypes }: Props) {
     resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  const categoryCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    for (const job of jobs) for (const c of job.categories) counts[c.id] = (counts[c.id] ?? 0) + 1;
-    return counts;
-  }, [jobs]);
-
-  const jobTypeCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    for (const job of jobs) for (const t of job.jobTypes) counts[t.id] = (counts[t.id] ?? 0) + 1;
-    return counts;
-  }, [jobs]);
-
-  const filtered = useMemo(() => {
-    const term = q.trim().toLowerCase();
-    return jobs
-      .filter((job) => job.isActive)
-      .filter((job) => {
-        if (term) {
-          const haystack = `${job.title} ${job.company?.name ?? ""} ${htmlToText(job.description)}`
-            .toLowerCase();
-          if (!haystack.includes(term)) return false;
-        }
-        if (
-          selectedCategories.length &&
-          !job.categories.some((c) => selectedCategories.includes(c.id))
-        )
-          return false;
-        if (selectedJobTypes.length && !job.jobTypes.some((t) => selectedJobTypes.includes(t.id)))
-          return false;
-        return true;
+  // Filter options (with live job counts) rarely change — fetched once.
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/v1/public/job-filters", { cache: "no-store" })
+      .then((res) => {
+        if (redirectOnDenied(res)) return null;
+        return res.json() as Promise<ApiResponse<JobFilterOptionsDTO>>;
       })
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [jobs, q, searchParams]);
+      .then((json) => {
+        if (!alive || !json) return;
+        if (json.success) setFilterOptions(json.data);
+        else setFiltersError(json.error.message);
+      })
+      .catch(() => {
+        if (alive) setFiltersError("Could not load filters.");
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const currentPage = Math.min(requestedPage, totalPages);
-  const pageItems = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  // The job results — refetched from the search + filter API whenever the
+  // URL-driven query state changes.
+  useEffect(() => {
+    let alive = true;
+    // Only the initial load shows the skeleton (jobsLoading starts `true`);
+    // later refetches swap results in place without one, matching the admin
+    // list pages' loading-indicator convention.
+    const params = new URLSearchParams({ limit: String(PAGE_SIZE), page: String(requestedPage) });
+    if (q) params.set("q", q);
+    if (selectedCategories.length) params.set("categories", selectedCategories.join(","));
+    if (selectedJobTypes.length) params.set("types", selectedJobTypes.join(","));
+
+    fetch(`/api/v1/public/jobs?${params.toString()}`, { cache: "no-store" })
+      .then((res) => {
+        if (redirectOnDenied(res)) return null;
+        return res.json() as Promise<ApiResponse<PublicJobListDTO>>;
+      })
+      .then((json) => {
+        if (!alive || !json) return;
+        if (json.success) {
+          setListing(json.data);
+          setJobsError(null);
+        } else {
+          setJobsError(json.error.message);
+        }
+      })
+      .catch(() => {
+        if (alive) setJobsError("Could not load jobs. Please try again.");
+      })
+      .finally(() => {
+        if (alive) setJobsLoading(false);
+      });
+
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [q, selectedCategories.join(","), selectedJobTypes.join(","), requestedPage]);
+
+  const items = listing?.items ?? [];
+  const total = listing?.total ?? 0;
+  const totalPages = listing?.totalPages ?? 1;
+  const currentPage = listing?.page ?? requestedPage;
 
   const hasActiveFilters = selectedCategories.length > 0 || selectedJobTypes.length > 0 || q !== "";
   const activeFilterCount = selectedCategories.length + selectedJobTypes.length;
@@ -189,7 +210,9 @@ export function JobListingPage({ jobs, categories, jobTypes }: Props) {
     <>
       <section className="border-line bg-surface border-b">
         <div className="mx-auto max-w-7xl px-5 py-10 sm:px-8 sm:py-14">
-          
+          <p className="text-brand text-sm font-semibold tracking-[0.18em] uppercase">
+            Job listings
+          </p>
           <h1 className="font-display text-ink mt-3 text-4xl leading-[1.1] font-semibold tracking-tight sm:text-5xl">
             Find your next role
           </h1>
@@ -201,6 +224,10 @@ export function JobListingPage({ jobs, categories, jobTypes }: Props) {
               value={qInput}
               onChange={setQInput}
               onSubmit={() => setSearch(qInput.trim())}
+              onClear={() => {
+                setQInput("");
+                setSearch("");
+              }}
             />
           </div>
         </div>
@@ -210,24 +237,28 @@ export function JobListingPage({ jobs, categories, jobTypes }: Props) {
         <div className="grid gap-8 lg:grid-cols-[280px_1fr] lg:items-start">
           <aside className="hidden lg:block">
             <div className="sticky top-24">
-              <JobFilters
-                categories={categories}
-                jobTypes={jobTypes}
-                categoryCounts={categoryCounts}
-                jobTypeCounts={jobTypeCounts}
-                selected={filtersState}
-                onToggleCategory={toggleCategory}
-                onToggleJobType={toggleJobType}
-                onClearAll={clearFilters}
-              />
+              {filtersError ? (
+                <p className="border-coral/30 bg-coral/10 text-coral rounded-2xl border px-4 py-3 text-sm">
+                  {filtersError}
+                </p>
+              ) : (
+                <JobFilters
+                  categories={filterOptions.categories}
+                  jobTypes={filterOptions.jobTypes}
+                  selected={filtersState}
+                  onToggleCategory={toggleCategory}
+                  onToggleJobType={toggleJobType}
+                  onClearAll={clearFilters}
+                />
+              )}
             </div>
           </aside>
 
           <div ref={resultsRef} className="min-w-0 scroll-mt-24">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <p className="text-muted text-sm">
-                <span className="text-ink font-semibold tabular-nums">{filtered.length}</span> open
-                role{filtered.length === 1 ? "" : "s"}
+                <span className="text-ink font-semibold tabular-nums">{total}</span> open role
+                {total === 1 ? "" : "s"}
               </p>
               <div className="flex items-center gap-2">
                 <button
@@ -247,7 +278,23 @@ export function JobListingPage({ jobs, categories, jobTypes }: Props) {
               </div>
             </div>
 
-            {pageItems.length === 0 ? (
+            {jobsError ? (
+              <p className="border-coral/30 bg-coral/10 text-coral mt-6 rounded-2xl border px-4 py-3 text-sm">
+                {jobsError}
+              </p>
+            ) : jobsLoading ? (
+              <div
+                className={
+                  view === "grid"
+                    ? "mt-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-3"
+                    : "mt-6 flex flex-col gap-4"
+                }
+              >
+                {Array.from({ length: PAGE_SIZE }, (_, i) => (
+                  <JobCardSkeleton key={i} view={view} />
+                ))}
+              </div>
+            ) : items.length === 0 ? (
               <div className="mt-6">
                 <EmptyState hasActiveFilters={hasActiveFilters} onClearFilters={resetAll} />
               </div>
@@ -260,7 +307,7 @@ export function JobListingPage({ jobs, categories, jobTypes }: Props) {
                       : "mt-6 flex flex-col gap-4"
                   }
                 >
-                  {pageItems.map((job) => (
+                  {items.map((job) => (
                     <JobCard key={job.id} job={job} view={view} />
                   ))}
                 </div>
@@ -274,10 +321,8 @@ export function JobListingPage({ jobs, categories, jobTypes }: Props) {
       <MobileFilterDrawer
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
-        categories={categories}
-        jobTypes={jobTypes}
-        categoryCounts={categoryCounts}
-        jobTypeCounts={jobTypeCounts}
+        categories={filterOptions.categories}
+        jobTypes={filterOptions.jobTypes}
         applied={filtersState}
         onApply={applyFilters}
       />

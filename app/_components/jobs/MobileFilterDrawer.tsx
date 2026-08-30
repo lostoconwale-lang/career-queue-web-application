@@ -5,16 +5,13 @@ import { AnimatePresence, motion } from "framer-motion";
 
 import { Close } from "@/app/_components/Icons";
 import { JobFilters, type JobFiltersState } from "@/app/_components/jobs/JobFilters";
-import type { CategoryDTO } from "@/types/category";
-import type { JobTypeDTO } from "@/types/job-type";
+import type { JobFilterOption } from "@/types/public-job";
 
 type Props = {
   open: boolean;
   onClose: () => void;
-  categories: CategoryDTO[];
-  jobTypes: JobTypeDTO[];
-  categoryCounts: Record<string, number>;
-  jobTypeCounts: Record<string, number>;
+  categories: JobFilterOption[];
+  jobTypes: JobFilterOption[];
   /** The filters currently applied to the listing (the URL state). */
   applied: JobFiltersState;
   onApply: (next: JobFiltersState) => void;
@@ -28,8 +25,6 @@ export function MobileFilterDrawer({
   onClose,
   categories,
   jobTypes,
-  categoryCounts,
-  jobTypeCounts,
   applied,
   onApply,
 }: Props) {
@@ -122,8 +117,6 @@ export function MobileFilterDrawer({
               <JobFilters
                 categories={categories}
                 jobTypes={jobTypes}
-                categoryCounts={categoryCounts}
-                jobTypeCounts={jobTypeCounts}
                 selected={draft}
                 onToggleCategory={toggleCategory}
                 onToggleJobType={toggleJobType}

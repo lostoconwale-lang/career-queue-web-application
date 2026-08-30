@@ -1,20 +1,24 @@
 "use client";
 
-import { SearchGlass } from "@/app/_components/Icons";
+import { Close, SearchGlass } from "@/app/_components/Icons";
 
 type Props = {
   value: string;
   onChange: (value: string) => void;
   onSubmit?: () => void;
+  /** Clears the input and the applied search in one step. */
+  onClear?: () => void;
   placeholder?: string;
 };
 
-// The search field at the top of the job listing page. Debounced updates to
-// the URL happen in the parent (JobListingPage); this just owns the pill UI.
+// The search field at the top of the job listing page. The parent
+// (JobListingPage) only searches when this form is submitted — typing alone
+// doesn't touch the URL or trigger a fetch.
 export function JobSearchBar({
   value,
   onChange,
   onSubmit,
+  onClear,
   placeholder = "Job title, keyword or company…",
 }: Props) {
   return (
@@ -34,6 +38,16 @@ export function JobSearchBar({
           placeholder={placeholder}
           className="text-ink placeholder:text-muted/70 w-full bg-transparent text-base outline-none"
         />
+        {value ? (
+          <button
+            type="button"
+            onClick={onClear}
+            aria-label="Clear search"
+            className="text-muted hover:text-ink hover:bg-cream grid h-7 w-7 shrink-0 place-items-center rounded-full transition-colors"
+          >
+            <Close className="h-4 w-4" />
+          </button>
+        ) : null}
       </label>
 
       <button

@@ -3,8 +3,7 @@
 import type { ReactNode } from "react";
 
 import { Check } from "@/app/_components/Icons";
-import type { CategoryDTO } from "@/types/category";
-import type { JobTypeDTO } from "@/types/job-type";
+import type { JobFilterOption } from "@/types/public-job";
 
 export type JobFiltersState = {
   categories: string[];
@@ -12,10 +11,8 @@ export type JobFiltersState = {
 };
 
 type Props = {
-  categories: CategoryDTO[];
-  jobTypes: JobTypeDTO[];
-  categoryCounts: Record<string, number>;
-  jobTypeCounts: Record<string, number>;
+  categories: JobFilterOption[];
+  jobTypes: JobFilterOption[];
   selected: JobFiltersState;
   onToggleCategory: (id: string) => void;
   onToggleJobType: (id: string) => void;
@@ -27,8 +24,6 @@ type Props = {
 export function JobFilters({
   categories,
   jobTypes,
-  categoryCounts,
-  jobTypeCounts,
   selected,
   onToggleCategory,
   onToggleJobType,
@@ -57,7 +52,7 @@ export function JobFilters({
           <FilterCheckbox
             key={category.id}
             label={category.name}
-            count={categoryCounts[category.id] ?? 0}
+            count={category.count}
             checked={selected.categories.includes(category.id)}
             onChange={() => onToggleCategory(category.id)}
           />
@@ -69,7 +64,7 @@ export function JobFilters({
           <FilterCheckbox
             key={jobType.id}
             label={jobType.name}
-            count={jobTypeCounts[jobType.id] ?? 0}
+            count={jobType.count}
             checked={selected.jobTypes.includes(jobType.id)}
             onChange={() => onToggleJobType(jobType.id)}
           />
