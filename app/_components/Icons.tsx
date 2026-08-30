@@ -691,6 +691,60 @@ export function Clock({ className }: IconProps) {
   );
 }
 
+export function Filter({ className }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+      className={className}
+    >
+      <path d="M4 6h16M7 12h10M10.5 18h3" />
+    </svg>
+  );
+}
+
+export function Grid({ className }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinejoin="round"
+      aria-hidden
+      className={className}
+    >
+      <rect x="3.5" y="3.5" width="7.5" height="7.5" rx="1.8" />
+      <rect x="13" y="3.5" width="7.5" height="7.5" rx="1.8" />
+      <rect x="3.5" y="13" width="7.5" height="7.5" rx="1.8" />
+      <rect x="13" y="13" width="7.5" height="7.5" rx="1.8" />
+    </svg>
+  );
+}
+
+export function ListView({ className }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      aria-hidden
+      className={className}
+    >
+      <rect x="4" y="5" width="4" height="4" rx="1" fill="currentColor" stroke="none" />
+      <rect x="4" y="15" width="4" height="4" rx="1" fill="currentColor" stroke="none" />
+      <path d="M11 7h9M11 17h9" />
+    </svg>
+  );
+}
+
 export function QuestionMark({ className }: IconProps) {
   return (
     <svg

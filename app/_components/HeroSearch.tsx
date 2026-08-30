@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 import { cities, quickFilters } from "../_data";
 import CitySelect from "./CitySelect";
 import { SearchGlass } from "./Icons";
 
 export default function HeroSearch() {
+  const router = useRouter();
   const [role, setRole] = useState("");
   const [cityId, setCityId] = useState("");
 
@@ -15,7 +17,8 @@ export default function HeroSearch() {
       <form
         onSubmit={(event) => {
           event.preventDefault();
-          console.log("search", { role, cityId });
+          // No location field exists on a job yet, so only the keyword carries over.
+          router.push(role.trim() ? `/jobs?q=${encodeURIComponent(role.trim())}` : "/jobs");
         }}
         className="border-line bg-surface shadow-soft flex flex-col gap-2 rounded-3xl border p-2 sm:flex-row sm:items-center sm:rounded-full sm:p-2.5"
       >
