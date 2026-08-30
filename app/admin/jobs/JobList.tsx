@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { ConfirmDialog } from "@/app/_components/ConfirmDialog";
-import { Close, Photo } from "@/app/_components/Icons";
+import { Buildings, Close, Photo } from "@/app/_components/Icons";
 import { SearchInput } from "@/app/_components/SearchInput";
 import { Select } from "@/app/_components/Select";
 import { Table, type Column } from "@/app/_components/Table";
@@ -218,6 +218,30 @@ export function JobList() {
       ),
     },
     {
+      key: "company",
+      header: "Company",
+      cell: (j) =>
+        j.company ? (
+          <div className="flex min-w-0 items-center gap-2">
+            {j.company.logo ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={j.company.logo.url}
+                alt=""
+                className="border-line bg-cream h-7 w-7 shrink-0 rounded-md border object-contain p-0.5"
+              />
+            ) : (
+              <span className="border-line bg-cream text-muted/50 grid h-7 w-7 shrink-0 place-items-center rounded-md border">
+                <Buildings className="h-3.5 w-3.5" />
+              </span>
+            )}
+            <span className="text-ink truncate text-sm">{j.company.name}</span>
+          </div>
+        ) : (
+          <span className="text-muted text-xs">—</span>
+        ),
+    },
+    {
       key: "jobTypes",
       header: "Type",
       cell: (j) => (
@@ -365,7 +389,7 @@ export function JobList() {
           rowKey={(j) => j.id}
           loading={loading}
           emptyMessage="No jobs match this view."
-          minWidth={880}
+          minWidth={980}
         />
       </div>
 

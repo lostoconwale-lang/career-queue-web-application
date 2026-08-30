@@ -27,12 +27,20 @@ export interface JobTypeSnapshot {
   name: string;
 }
 
+// A company snapshot embedded on the job. `_id` is the Company's own id.
+export interface JobCompany {
+  _id: Types.ObjectId;
+  name: string;
+  logo: EmbeddedMedia | null;
+}
+
 export interface JobDoc {
   _id: Types.ObjectId;
   title: string;
   description: string;
   categories: JobCategory[];
   jobTypes: JobTypeSnapshot[];
+  company: JobCompany | null;
   coverImage: EmbeddedMedia | null;
   thumbnail: EmbeddedMedia | null;
   seo: SeoMeta;
@@ -58,12 +66,20 @@ const jobTypeSnapshotSchema = new Schema<JobTypeSnapshot>({
   name: { type: String, required: true, trim: true, maxlength: 80 },
 });
 
+// `_id` is the referenced Company's own id.
+const jobCompanySchema = new Schema<JobCompany>({
+  _id: { type: Schema.Types.ObjectId, ref: "Company", required: true },
+  name: { type: String, required: true, trim: true, maxlength: 160 },
+  logo: { type: embeddedMediaSchema, default: null },
+});
+
 const jobSchema = new Schema<JobDoc, JobModel>(
   {
     title: { type: String, required: true, trim: true, maxlength: 160 },
     description: { type: String, default: "", maxlength: 20000 },
     categories: { type: [jobCategorySchema], default: [] },
     jobTypes: { type: [jobTypeSnapshotSchema], default: [] },
+    company: { type: jobCompanySchema, default: null },
     coverImage: { type: embeddedMediaSchema, default: null },
     thumbnail: { type: embeddedMediaSchema, default: null },
     seo: { type: seoSchema, default: () => ({}) },
@@ -79,6 +95,7 @@ jobSchema.pre("validate", function () {
     this.title,
     this.categories.map((c) => c.name).join(" "),
     this.jobTypes.map((t) => t.name).join(" "),
+    this.company?.name,
     htmlToText(this.description),
   ]);
 });
@@ -87,6 +104,7 @@ jobSchema.index({ searchKeyword: 1 });
 jobSchema.index({ isActive: 1, isDeleted: 1 });
 jobSchema.index({ "categories._id": 1, isDeleted: 1 });
 jobSchema.index({ "jobTypes._id": 1, isDeleted: 1 });
+jobSchema.index({ "company._id": 1, isDeleted: 1 });
 
 if (process.env.NODE_ENV !== "production" && models.Job) deleteModel("Job");
 

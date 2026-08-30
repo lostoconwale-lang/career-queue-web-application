@@ -34,6 +34,8 @@ const jobTypeIdsSchema = z
   .refine((ids) => ids.length >= L.jobTypes.min, "Pick at least one job type")
   .refine((ids) => ids.length <= L.jobTypes.max, `Pick at most ${L.jobTypes.max} job types`);
 
+const jobCompanyIdSchema = objectIdSchema;
+
 // An embedded image reference — just the storage key. Required for a job.
 const imageRefSchema = z.object({ key: z.string().trim().min(1).max(300) });
 
@@ -70,6 +72,7 @@ export const createJobBodySchema = z.object({
   description: jobDescriptionSchema,
   categoryIds: jobCategoryIdsSchema,
   jobTypeIds: jobTypeIdsSchema,
+  companyId: jobCompanyIdSchema,
   coverImage: imageRefSchema,
   thumbnail: imageRefSchema,
   seo: jobSeoSchema,
@@ -83,6 +86,7 @@ export const updateJobBodySchema = z
     description: jobDescriptionSchema,
     categoryIds: jobCategoryIdsSchema,
     jobTypeIds: jobTypeIdsSchema,
+    companyId: jobCompanyIdSchema,
     coverImage: imageRefSchema,
     thumbnail: imageRefSchema,
     isActive: z.boolean(),

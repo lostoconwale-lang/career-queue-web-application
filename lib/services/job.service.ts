@@ -6,12 +6,14 @@ import { cursorPage } from "@/lib/api/response";
 import { mediaUrl } from "@/lib/media";
 import { sanitizeHtml } from "@/lib/sanitize-html";
 import { Category } from "@/lib/models/category.model";
+import { Company } from "@/lib/models/company.model";
 import { JobType } from "@/lib/models/job-type.model";
 import { normalizeSearchText } from "@/lib/models/searchable";
 import {
   Job,
   type JobHydrated,
   type JobCategory,
+  type JobCompany,
   type JobTypeSnapshot,
 } from "@/lib/models/job.model";
 import type { CreateJobBody, ListJobsQuery, UpdateJobBody } from "@/lib/validators/job.validator";
@@ -30,6 +32,13 @@ export function toJobDTO(j: JobHydrated): JobDTO {
     description: j.description,
     categories: j.categories.map((c) => ({ id: c._id.toString(), name: c.name })),
     jobTypes: j.jobTypes.map((t) => ({ id: t._id.toString(), name: t.name })),
+    company: j.company
+      ? {
+          id: j.company._id.toString(),
+          name: j.company.name,
+          logo: embeddedMediaDTO(j.company.logo),
+        }
+      : null,
     coverImage: embeddedMediaDTO(j.coverImage),
     thumbnail: embeddedMediaDTO(j.thumbnail),
     seo: {
@@ -68,6 +77,13 @@ async function resolveJobTypes(ids: string[]): Promise<JobTypeSnapshot[]> {
   return docs.map((d) => ({ _id: d._id, name: d.name }));
 }
 
+// Resolve a company id to an embedded snapshot, rejecting an unknown/deleted one.
+async function resolveCompany(id: string): Promise<JobCompany> {
+  const doc = await Company.findOne({ _id: id, isDeleted: false }).select("name logo");
+  if (!doc) throw new BadRequestError("Selected company no longer exists");
+  return { _id: doc._id, name: doc.name, logo: doc.logo };
+}
+
 export async function getJobById(id: string): Promise<JobDTO> {
   if (!Types.ObjectId.isValid(id)) throw new NotFoundError("Job");
   const doc = await Job.findOne({ _id: id, isDeleted: false });
@@ -97,6 +113,7 @@ export async function createJob(body: CreateJobBody): Promise<JobDTO> {
     description: sanitizeHtml(body.description),
     categories: await resolveCategories(body.categoryIds),
     jobTypes: await resolveJobTypes(body.jobTypeIds),
+    company: await resolveCompany(body.companyId),
     coverImage: body.coverImage,
     thumbnail: body.thumbnail,
     seo: body.seo,
@@ -113,6 +130,7 @@ export async function updateJob(id: string, patch: UpdateJobBody): Promise<JobDT
   if (patch.description !== undefined) doc.description = sanitizeHtml(patch.description);
   if (patch.categoryIds !== undefined) doc.categories = await resolveCategories(patch.categoryIds);
   if (patch.jobTypeIds !== undefined) doc.jobTypes = await resolveJobTypes(patch.jobTypeIds);
+  if (patch.companyId !== undefined) doc.set("company", await resolveCompany(patch.companyId));
   if (patch.coverImage !== undefined) doc.set("coverImage", patch.coverImage);
   if (patch.thumbnail !== undefined) doc.set("thumbnail", patch.thumbnail);
   if (patch.isActive !== undefined) doc.isActive = patch.isActive;

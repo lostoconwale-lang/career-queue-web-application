@@ -427,6 +427,26 @@ export function Briefcase({ className }: IconProps) {
   );
 }
 
+export function Buildings({ className }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+      className={className}
+    >
+      <path d="M4 21V6.5A1.5 1.5 0 0 1 5.5 5H13a1.5 1.5 0 0 1 1.5 1.5V21" />
+      <path d="M14.5 10.5H19a1 1 0 0 1 1 1V21" />
+      <path d="M4 21h16" />
+      <path d="M7.5 9h2M7.5 12.5h2M7.5 16h2M17 14h1M17 17.5h1" />
+    </svg>
+  );
+}
+
 export function ShieldCheck({ className }: IconProps) {
   return (
     <svg

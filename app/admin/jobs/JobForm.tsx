@@ -9,6 +9,7 @@ import { AuthField } from "@/app/_components/AuthField";
 import { Check } from "@/app/_components/Icons";
 import { RichTextEditor } from "@/app/_components/RichTextEditor";
 import { ChipMultiSelect } from "@/app/admin/_components/ChipMultiSelect";
+import { CompanySelectField, type CompanyRef } from "@/app/admin/_components/CompanySelectField";
 import { ImageField } from "@/app/admin/_components/ImageField";
 import { redirectOnDenied } from "@/lib/auth-redirect";
 import { JOB_LIMITS as L, parseKeywords } from "@/lib/job.constants";
@@ -34,6 +35,7 @@ const FIELD_TAB: Record<string, TabKey> = {
   title: "details",
   categories: "details",
   jobTypes: "details",
+  company: "details",
   coverImage: "details",
   thumbnail: "details",
   description: "description",
@@ -54,6 +56,7 @@ export function JobForm({ jobId }: { jobId?: string }) {
   const [description, setDescription] = useState("");
   const [categories, setCategories] = useState<JobCategoryRef[]>([]);
   const [jobTypes, setJobTypes] = useState<JobTypeRef[]>([]);
+  const [company, setCompany] = useState<CompanyRef | null>(null);
   const [coverImage, setCoverImage] = useState<EmbeddedMediaDTO | null>(null);
   const [thumbnail, setThumbnail] = useState<EmbeddedMediaDTO | null>(null);
   const [metaTitle, setMetaTitle] = useState("");
@@ -106,6 +109,9 @@ export function JobForm({ jobId }: { jobId?: string }) {
         setDescription(j.description);
         setCategories(j.categories);
         setJobTypes(j.jobTypes);
+        setCompany(
+          j.company ? { id: j.company.id, name: j.company.name, logoUrl: j.company.logo?.url ?? null } : null,
+        );
         setCoverImage(j.coverImage);
         setThumbnail(j.thumbnail);
         setMetaTitle(j.seo.metaTitle);
@@ -147,6 +153,8 @@ export function JobForm({ jobId }: { jobId?: string }) {
     else if (jobTypes.length > L.jobTypes.max)
       e.jobTypes = `Pick at most ${L.jobTypes.max} job types`;
 
+    if (!company) e.company = "Choose a company";
+
     if (!coverImage) e.coverImage = "Choose a cover image";
     if (!thumbnail) e.thumbnail = "Choose a thumbnail";
 
@@ -171,6 +179,7 @@ export function JobForm({ jobId }: { jobId?: string }) {
     descLen,
     categories.length,
     jobTypes.length,
+    company,
     coverImage,
     thumbnail,
     metaTitleLen,
@@ -203,6 +212,7 @@ export function JobForm({ jobId }: { jobId?: string }) {
       description,
       categoryIds: categories.map((c) => c.id),
       jobTypeIds: jobTypes.map((t) => t.id),
+      companyId: company?.id,
       coverImage: coverImage ? { key: coverImage.key } : null,
       thumbnail: thumbnail ? { key: thumbnail.key } : null,
       seo: {
@@ -356,6 +366,17 @@ export function JobForm({ jobId }: { jobId?: string }) {
                 emptyText="No active job types yet."
                 emptyHref="/admin/job-types/new"
                 emptyLinkLabel="Create one"
+              />
+
+              <CompanySelectField
+                required
+                hint="The company this job is posted under."
+                value={company}
+                error={show("company")}
+                onChange={(next) => {
+                  markTouched("company");
+                  setCompany(next);
+                }}
               />
 
               <div className="grid gap-6 sm:grid-cols-2">

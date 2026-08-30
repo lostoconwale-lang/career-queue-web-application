@@ -9,6 +9,7 @@ import type { UpdateAdminBody } from "@/lib/validators/admin.validator";
 import type { ListActivityLogsQuery } from "@/lib/validators/activity-log.validator";
 import type { UpdateCategoryBody } from "@/lib/validators/category.validator";
 import type { UpdateCityBody } from "@/lib/validators/city.validator";
+import type { UpdateCompanyBody } from "@/lib/validators/company.validator";
 import type { UpdateFaqBody } from "@/lib/validators/faq.validator";
 import type { UpdateJobTypeBody } from "@/lib/validators/job-type.validator";
 import type { UpdateJobBody } from "@/lib/validators/job.validator";
@@ -20,6 +21,7 @@ import type { CursorPage } from "@/types/api";
 import type { AdminDTO } from "@/types/admin";
 import type { CategoryDTO } from "@/types/category";
 import type { CityDTO } from "@/types/city";
+import type { CompanyDTO } from "@/types/company";
 import type { FaqDTO } from "@/types/faq";
 import type { JobTypeDTO } from "@/types/job-type";
 import type { JobDTO } from "@/types/job";
@@ -205,6 +207,36 @@ function categoryChangeMessage(category: CategoryDTO, patch: UpdateCategoryBody)
   return `Updated the category "${category.name}"`;
 }
 
+export function logCompanyCreated(actor: ActivityActor, company: CompanyDTO): Promise<void> {
+  return write("company", "create", actor, `Added the company "${company.name}"`);
+}
+
+export function logCompanyUpdated(
+  actor: ActivityActor,
+  company: CompanyDTO,
+  patch: UpdateCompanyBody,
+): Promise<void> {
+  return write("company", "update", actor, companyChangeMessage(company, patch));
+}
+
+export function logCompanyDeleted(actor: ActivityActor, company: CompanyDTO): Promise<void> {
+  return write("company", "delete", actor, `Deleted the company "${company.name}"`);
+}
+
+function companyChangeMessage(company: CompanyDTO, patch: UpdateCompanyBody): string {
+  if (patch.isActive === false) return `Turned off the company "${company.name}"`;
+  if (patch.isActive === true) return `Turned on the company "${company.name}"`;
+  if (patch.name !== undefined) return `Renamed a company to "${company.name}"`;
+  if (patch.description !== undefined)
+    return `Updated the description for the company "${company.name}"`;
+  if (patch.website !== undefined) return `Updated the website for the company "${company.name}"`;
+  if (patch.logo !== undefined)
+    return patch.logo
+      ? `Set the logo for the company "${company.name}"`
+      : `Removed the logo from the company "${company.name}"`;
+  return `Updated the company "${company.name}"`;
+}
+
 export function logJobTypeCreated(actor: ActivityActor, jobType: JobTypeDTO): Promise<void> {
   return write("job-type", "create", actor, `Added the job type "${jobType.name}"`);
 }
@@ -253,6 +285,7 @@ function jobChangeMessage(job: JobDTO, patch: UpdateJobBody): string {
   if (patch.description !== undefined) return `Updated the description for the job "${job.title}"`;
   if (patch.categoryIds !== undefined) return `Updated the categories for the job "${job.title}"`;
   if (patch.jobTypeIds !== undefined) return `Updated the job types for the job "${job.title}"`;
+  if (patch.companyId !== undefined) return `Updated the company for the job "${job.title}"`;
   if (patch.coverImage !== undefined || patch.thumbnail !== undefined)
     return `Updated the images for the job "${job.title}"`;
   if (patch.seo !== undefined) return `Updated SEO details for the job "${job.title}"`;

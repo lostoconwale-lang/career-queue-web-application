@@ -12,6 +12,7 @@ import { ConfirmDialog } from "@/app/_components/ConfirmDialog";
 import {
   Activity,
   Briefcase,
+  Buildings,
   Chevron,
   Clock,
   Close,
@@ -41,6 +42,7 @@ const NAV: NavEntry[] = [
   { label: "Cities", href: "/admin/cities", icon: Pin },
   { label: "Categories", href: "/admin/categories", icon: Tag },
   { label: "Job types", href: "/admin/job-types", icon: Clock },
+  { label: "Companies", href: "/admin/companies", icon: Buildings },
   { label: "Jobs", href: "/admin/jobs", icon: Briefcase },
   { label: "Testimonials", href: "/admin/testimonials", icon: Quote },
   { label: "FAQs", href: "/admin/faqs", icon: QuestionMark },
