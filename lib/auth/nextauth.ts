@@ -9,7 +9,7 @@ import { adminLoginBodySchema } from "@/lib/validators/admin.validator";
 import { upsertGoogleUser, verifyCredentials } from "@/lib/services/auth.service";
 import { adminSessionValid, verifyAdminLogin } from "@/lib/services/admin.service";
 import { activityActor, logAdminLogout } from "@/lib/services/activity-log.service";
-import type { Principal } from "@/types/auth";
+import { PHONE_COUNTRY_CODES, type Principal } from "@/types/auth";
 
 interface Claims {
   id?: string;
@@ -27,14 +27,32 @@ const config = {
   trustHost: true,
   providers: [
     Google,
-    // Website users.
+    // Website users. Credentials are always flat strings over the wire, so a
+    // mobile sign-in sends `phoneNumber` (bare 10 digits) rather than the
+    // structured `{countryCode, number}` shape `loginBodySchema` expects —
+    // reassemble it here before validating.
     Credentials({
       credentials: {
         email: { label: "Email", type: "email" },
+        phoneNumber: { label: "Mobile number", type: "text" },
         password: { label: "Password", type: "password" },
       },
       async authorize(raw) {
-        const parsed = loginBodySchema.safeParse(raw);
+        const r = raw as Record<string, string> | undefined;
+        // A caller passing `email: undefined` (or `phoneNumber: undefined`)
+        // has it arrive here as the literal string "undefined" — treat that,
+        // and a blank string, as not provided.
+        const clean = (v: string | undefined) => (v && v !== "undefined" ? v : undefined);
+        const email = clean(r?.email);
+        const phoneNumber = clean(r?.phoneNumber);
+        const candidate = {
+          email,
+          phone: phoneNumber
+            ? { countryCode: PHONE_COUNTRY_CODES[0], number: phoneNumber }
+            : undefined,
+          password: r?.password,
+        };
+        const parsed = loginBodySchema.safeParse(candidate);
         if (!parsed.success) return null;
         try {
           const identity = await verifyCredentials(parsed.data);

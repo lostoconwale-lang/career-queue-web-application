@@ -42,11 +42,18 @@ export type RegisterFormPayload = z.infer<typeof registerFormSchema>;
 
 /* ------------------------------- login ---------------------------------- */
 
-// User login only. Admins have their own flow (/api/v1/admin/login).
-export const loginBodySchema = z.object({
-  email: emailSchema,
-  password: z.string().min(1, "Password is required"),
-});
+// User login only. Admins have their own flow (/api/v1/admin/login). Sign in
+// with either identifier — exactly one of `email` / `phone` must be present.
+export const loginBodySchema = z
+  .object({
+    email: emailSchema.optional(),
+    phone: phoneSchema.optional(),
+    password: z.string().min(1, "Password is required"),
+  })
+  .refine((v) => Boolean(v.email) || Boolean(v.phone), {
+    message: "Email or mobile number is required",
+    path: ["email"],
+  });
 export type LoginBody = z.infer<typeof loginBodySchema>;
 
 export const refreshBodySchema = z.object({
@@ -76,8 +83,11 @@ export const loginFormSchema = z.discriminatedUnion("method", [
 export type LoginFormValues = z.infer<typeof loginFormSchema>;
 
 /** Build the request body for POST /api/v1/auth/login from validated form values. */
-export function buildLoginPayload(values: LoginFormValues) {
+export function buildLoginPayload(values: LoginFormValues): LoginBody {
   return values.method === "email"
     ? { email: values.email, password: values.password }
-    : { phone: `+91${values.mobile}`, password: values.password };
+    : {
+        phone: { countryCode: PHONE_COUNTRY_CODES[0], number: values.mobile },
+        password: values.password,
+      };
 }

@@ -5,13 +5,6 @@ import Link from "next/link";
 
 import Logo from "./Logo";
 
-const links = [
-  { label: "How it works", href: "#how-it-works" },
-  { label: "Categories", href: "#categories" },
-  { label: "What you get", href: "#features" },
-  { label: "FAQ", href: "#faq" },
-];
-
 export default function Nav() {
   const [scrolled, setScrolled] = useState(false);
 
@@ -44,16 +37,6 @@ export default function Nav() {
               Browse jobs
             </Link>
           </li>
-          {links.map((link) => (
-            <li key={link.href}>
-              <a
-                href={link.href}
-                className="text-muted hover:bg-brand-soft hover:text-ink rounded-full px-4 py-2 text-sm font-medium transition-colors"
-              >
-                {link.label}
-              </a>
-            </li>
-          ))}
         </ul>
 
         <div className="ml-auto flex items-center gap-2 md:ml-0">

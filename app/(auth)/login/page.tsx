@@ -3,29 +3,37 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 
 import { AuthField } from "@/app/_components/AuthField";
 import { AuthDivider, GoogleButton } from "@/app/_components/GoogleButton";
 import { Arrow } from "@/app/_components/Icons";
 import { buildLoginPayload, loginFormSchema } from "@/lib/validators/auth.validator";
+import type { ApiResponse } from "@/types/api";
 
 type Method = "email" | "mobile";
 type FieldErrors = Partial<Record<"email" | "mobile" | "password", string>>;
 
 export default function LoginPage() {
+  const router = useRouter();
   const [method, setMethod] = useState<Method>("email");
   const [email, setEmail] = useState("");
   const [mobile, setMobile] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<FieldErrors>({});
+  const [formError, setFormError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   function switchMethod(next: Method) {
     setMethod(next);
     setErrors({});
+    setFormError(null);
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setFormError(null);
 
     const input = method === "email" ? { method, email, password } : { method, mobile, password };
 
@@ -41,8 +49,48 @@ export default function LoginPage() {
     }
 
     setErrors({});
-    const payload = buildLoginPayload(parsed.data);
-    window.alert(JSON.stringify(payload, null, 2));
+    setSubmitting(true);
+
+    try {
+      const payload = buildLoginPayload(parsed.data);
+
+      // 1. Validate credentials + surface the real reason (bad password vs.
+      //    awaiting approval vs. deactivated vs. Google-only account).
+      const res = await fetch("/api/v1/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const json = (await res.json()) as ApiResponse<unknown>;
+      if (!json.success) {
+        setFormError(json.error.message);
+        return;
+      }
+
+      // 2. Establish the browser session via the credentials provider. Only
+      //    the relevant identifier key is included — `signIn` serializes
+      //    every option to a string, so an `email: undefined` here would
+      //    become the literal string "undefined" and get picked up as a
+      //    (bogus, truthy) email on the other side.
+      const outcome = await signIn("credentials", {
+        redirect: false,
+        password: parsed.data.password,
+        ...(parsed.data.method === "email"
+          ? { email: parsed.data.email }
+          : { phoneNumber: parsed.data.mobile }),
+      });
+      if (outcome?.error) {
+        setFormError("Could not start your session. Please try again.");
+        return;
+      }
+
+      router.push("/jobs");
+      router.refresh();
+    } catch {
+      setFormError("Something went wrong. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -51,6 +99,12 @@ export default function LoginPage() {
         Welcome <span className="text-brand font-light italic">back</span>
       </h1>
       <p className="text-muted mt-3">Log in to your account.</p>
+
+      {formError ? (
+        <p className="border-coral/30 bg-coral/10 text-coral mt-6 rounded-2xl border px-4 py-3 text-sm">
+          {formError}
+        </p>
+      ) : null}
 
       <div className="bg-cream mt-8 flex gap-1 rounded-2xl p-1 text-sm">
         {(["email", "mobile"] as const).map((option) => (
@@ -68,7 +122,7 @@ export default function LoginPage() {
         ))}
       </div>
 
-      <form onSubmit={handleSubmit} className="mt-6 space-y-5">
+      <form onSubmit={handleSubmit} className="mt-6 space-y-5" noValidate>
         {method === "email" ? (
           <AuthField
             label="Email"
@@ -106,19 +160,17 @@ export default function LoginPage() {
           value={password}
           error={errors.password}
           onChange={(event) => setPassword(event.target.value)}
-          trailing={
-            <Link href="/login" className="text-brand text-sm font-medium hover:underline">
-              Forgot password?
-            </Link>
-          }
         />
 
         <button
           type="submit"
-          className="group bg-brand text-surface shadow-soft flex w-full items-center justify-center gap-2 rounded-full px-7 py-3.5 text-base font-semibold transition-transform hover:-translate-y-0.5"
+          disabled={submitting}
+          className="group bg-brand text-surface shadow-soft flex w-full items-center justify-center gap-2 rounded-full px-7 py-3.5 text-base font-semibold transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
         >
-          Log in
-          <Arrow className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+          {submitting ? "Logging in…" : "Log in"}
+          {submitting ? null : (
+            <Arrow className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+          )}
         </button>
       </form>
 

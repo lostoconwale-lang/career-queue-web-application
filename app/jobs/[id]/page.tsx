@@ -55,10 +55,10 @@ export default async function JobDetailPage({ params }: { params: Promise<Params
     <>
       <Nav />
       <main>
-        <div className="mx-auto max-w-4xl px-5 py-10 sm:px-8 sm:py-14">
-          <BackToResults />
+        <div className="mx-auto  px-5 py-10 sm:px-8 sm:py-14">
+          {/* <BackToResults /> */}
 
-          <div className="border-line bg-surface shadow-soft mt-6 rounded-card overflow-hidden border">
+          <div className="mt-6 overflow-hidden rounded-card">
             {job.coverImage ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
@@ -71,7 +71,7 @@ export default async function JobDetailPage({ params }: { params: Promise<Params
             <div className="p-6 sm:p-10">
               <div className="flex flex-wrap items-start gap-5">
                 <CompanyLogo
-                  photoUrl={null}
+                  photoUrl={job.thumbnail?.url}
                   logoUrl={job.company?.logo?.url}
                   name={job.company?.name ?? job.title}
                   size={64}
@@ -82,9 +82,7 @@ export default async function JobDetailPage({ params }: { params: Promise<Params
                       <Buildings className="h-3.5 w-3.5 shrink-0" />
                       {job.company.name}
                     </p>
-                  ) : (
-                    <p className="text-muted text-sm font-medium">Company not listed</p>
-                  )}
+                  ) : null}
                   <h1 className="font-display text-ink mt-1 text-2xl leading-tight font-semibold tracking-tight sm:text-3xl">
                     {job.title}
                   </h1>
@@ -112,10 +110,12 @@ export default async function JobDetailPage({ params }: { params: Promise<Params
                 </ul>
               ) : null}
 
-              <div
-                className="job-html text-ink mt-8 text-[15px]"
-                dangerouslySetInnerHTML={{ __html: job.description }}
-              />
+              {job.description ? (
+                <div
+                  className="job-html text-ink mt-8 text-[15px]"
+                  dangerouslySetInnerHTML={{ __html: job.description }}
+                />
+              ) : null}
 
               <div
                 id="apply"

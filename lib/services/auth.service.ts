@@ -70,18 +70,21 @@ export async function completeProfile(
 }
 
 // User credential check — used by /api/v1/auth/login AND the NextAuth user
-// provider. Admins go through admin.service.verifyAdminLogin.
+// provider. Admins go through admin.service.verifyAdminLogin. Sign-in with
+// either identifier — the caller guarantees exactly one is present.
 export async function verifyCredentials(body: LoginBody): Promise<{
   id: string;
   email: string;
   name: string;
 }> {
-  const user = await User.findOne({ email: body.email }).select("+passwordHash");
-  if (!user) throw new UnauthorizedError("Invalid email or password");
+  const user = body.email
+    ? await User.findOne({ email: body.email }).select("+passwordHash")
+    : await User.findOne({ "phone.number": body.phone?.number }).select("+passwordHash");
+  if (!user) throw new UnauthorizedError("Invalid credentials");
   if (!user.passwordHash) throw new UnauthorizedError("This account uses Google sign-in");
 
   const ok = await verifyPassword(body.password, user.passwordHash);
-  if (!ok) throw new UnauthorizedError("Invalid email or password");
+  if (!ok) throw new UnauthorizedError("Invalid credentials");
   if (user.status !== "active") throw new ForbiddenError("Account is suspended");
   if (!user.adminVerified) throw new ForbiddenError("Your account is awaiting admin approval");
 
