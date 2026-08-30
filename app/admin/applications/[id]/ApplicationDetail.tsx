@@ -2,40 +2,34 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
-import { ConfirmDialog } from "@/app/_components/ConfirmDialog";
-import { Buildings, Mail } from "@/app/_components/Icons";
+import { Arrow, Buildings, Mail } from "@/app/_components/Icons";
 import { Select } from "@/app/_components/Select";
 import { Badge } from "@/app/admin/_components/table-ui";
+import { StatusBadge } from "@/app/admin/applications/StatusBadge";
+import { STATUS_LABEL } from "@/app/admin/applications/status-styles";
 import { redirectOnDenied } from "@/lib/auth-redirect";
 import { formatDateTime } from "@/lib/date";
-import { JOB_APPLICATION_STATUSES, type JobApplicationStatus } from "@/types/job-application";
+import { htmlToText } from "@/lib/sanitize-html";
+import { JOB_APPLICATION_STATUSES } from "@/types/job-application";
 import type { ApiResponse } from "@/types/api";
+import type { JobDTO } from "@/types/job";
 import type { JobApplicationDTO } from "@/types/job-application";
 
-const STATUS_OPTIONS = JOB_APPLICATION_STATUSES.map((s) => ({
-  value: s,
-  label: s.charAt(0).toUpperCase() + s.slice(1),
-}));
-
-const STATUS_BADGE_TONE: Record<JobApplicationStatus, "neutral" | "brand" | "danger"> = {
-  pending: "neutral",
-  reviewed: "neutral",
-  shortlisted: "brand",
-  hired: "brand",
-  rejected: "danger",
-};
+const STATUS_OPTIONS = JOB_APPLICATION_STATUSES.map((s) => ({ value: s, label: STATUS_LABEL[s] }));
 
 export function ApplicationDetail({ applicationId }: { applicationId: string }) {
-  const router = useRouter();
   const [application, setApplication] = useState<JobApplicationDTO | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [deleting, setDeleting] = useState(false);
-  const [confirmingDelete, setConfirmingDelete] = useState(false);
+
+  // The application only snapshots the job's filterable fields (title,
+  // company, category, type) — fetch the live job for everything else
+  // (description, images, whether it's still active).
+  const [job, setJob] = useState<JobDTO | null>(null);
+  const [jobChecked, setJobChecked] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -60,6 +54,28 @@ export function ApplicationDetail({ applicationId }: { applicationId: string }) 
     };
   }, [applicationId]);
 
+  useEffect(() => {
+    const jobId = application?.job.id;
+    if (!jobId) return;
+    let alive = true;
+    fetch(`/api/v1/jobs/${jobId}`, { cache: "no-store" })
+      .then((res) => {
+        if (redirectOnDenied(res)) return null;
+        return res.json() as Promise<ApiResponse<JobDTO>>;
+      })
+      .then((json) => {
+        if (!alive || !json) return;
+        if (json.success) setJob(json.data);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (alive) setJobChecked(true);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [application?.job.id]);
+
   async function changeStatus(status: string) {
     if (!application) return;
     setUpdatingStatus(true);
@@ -81,27 +97,6 @@ export function ApplicationDetail({ applicationId }: { applicationId: string }) 
       setError("Could not update the status. Please try again.");
     } finally {
       setUpdatingStatus(false);
-    }
-  }
-
-  async function confirmDelete() {
-    setDeleting(true);
-    setError(null);
-    try {
-      const res = await fetch(`/api/v1/applications/${applicationId}`, { method: "DELETE" });
-      if (redirectOnDenied(res)) return;
-      if (!res.ok) {
-        const json = (await res.json()) as ApiResponse<unknown>;
-        setError(json.success ? "Could not delete this application." : json.error.message);
-        return;
-      }
-      router.push("/admin/applications");
-      router.refresh();
-    } catch {
-      setError("Could not delete this application. Please try again.");
-    } finally {
-      setDeleting(false);
-      setConfirmingDelete(false);
     }
   }
 
@@ -138,6 +133,9 @@ export function ApplicationDetail({ applicationId }: { applicationId: string }) 
     })),
   ];
 
+  const jobImage = job?.thumbnail ?? job?.coverImage ?? null;
+  const jobDescription = job?.description ? htmlToText(job.description) : "";
+
   return (
     <div className="px-5 py-10 sm:px-8">
       <Link href="/admin/applications" className="text-muted hover:text-ink text-sm font-medium">
@@ -153,9 +151,7 @@ export function ApplicationDetail({ applicationId }: { applicationId: string }) 
             {formatDateTime(application.createdAt)}
           </p>
         </div>
-        <Badge tone={STATUS_BADGE_TONE[application.status]}>
-          {application.status.charAt(0).toUpperCase() + application.status.slice(1)}
-        </Badge>
+        <StatusBadge status={application.status} />
       </div>
 
       {error ? (
@@ -193,15 +189,32 @@ export function ApplicationDetail({ applicationId }: { applicationId: string }) 
         </section>
 
         <section className="bg-surface border-line shadow-soft rounded-2xl border p-6 sm:p-7">
-          <h2 className="font-display text-ink text-lg font-semibold">Job</h2>
+          <div className="flex items-start justify-between gap-3">
+            <h2 className="font-display text-ink text-lg font-semibold">Job</h2>
+            {job ? (
+              <Link
+                href={`/admin/jobs/${application.job.id}/edit`}
+                className="text-brand inline-flex shrink-0 items-center gap-1 text-sm font-semibold hover:underline"
+              >
+                View job
+                <Arrow className="h-3.5 w-3.5" />
+              </Link>
+            ) : null}
+          </div>
+
+          {jobImage ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={jobImage.url}
+              alt=""
+              className="border-line bg-cream mt-4 h-32 w-full rounded-xl border object-cover"
+            />
+          ) : null}
+
           <dl className="mt-5 space-y-4 text-sm">
             <div>
               <dt className="text-muted">Title</dt>
-              <dd className="text-ink mt-0.5 font-medium">
-                <Link href={`/admin/jobs/${application.job.id}/edit`} className="hover:underline">
-                  {application.job.title}
-                </Link>
-              </dd>
+              <dd className="text-ink mt-0.5 font-medium">{application.job.title}</dd>
             </div>
             <div>
               <dt className="text-muted">Company</dt>
@@ -229,13 +242,37 @@ export function ApplicationDetail({ applicationId }: { applicationId: string }) 
                 </dd>
               </div>
             ) : null}
+            {job ? (
+              <div>
+                <dt className="text-muted">Listing status</dt>
+                <dd className="mt-1">
+                  <Badge tone={job.isActive ? "brand" : "neutral"}>
+                    {job.isActive ? "Active" : "Inactive"}
+                  </Badge>
+                </dd>
+              </div>
+            ) : null}
+            {jobDescription ? (
+              <div>
+                <dt className="text-muted">Description</dt>
+                <dd className="text-ink mt-1 line-clamp-4 leading-relaxed">{jobDescription}</dd>
+              </div>
+            ) : null}
+            {jobChecked && !job ? (
+              <p className="text-muted text-xs italic">
+                This job is no longer available — showing what was on it at the time of
+                application.
+              </p>
+            ) : null}
           </dl>
         </section>
       </div>
 
       <section className="bg-surface border-line shadow-soft mt-6 rounded-2xl border p-6 sm:p-7">
         <h2 className="font-display text-ink text-lg font-semibold">Status</h2>
-        <p className="text-muted mt-0.5 text-sm">Move this application through your review pipeline.</p>
+        <p className="text-muted mt-0.5 text-sm">
+          Move this application through your review pipeline.
+        </p>
         <div className="mt-4 max-w-56">
           <Select
             value={application.status}
@@ -246,27 +283,6 @@ export function ApplicationDetail({ applicationId }: { applicationId: string }) 
         </div>
         {updatingStatus ? <p className="text-muted mt-2 text-xs">Saving…</p> : null}
       </section>
-
-      <div className="mt-6 flex justify-end">
-        <button
-          type="button"
-          onClick={() => setConfirmingDelete(true)}
-          className="border-coral/40 text-coral hover:bg-coral/10 rounded-full border px-5 py-2.5 text-sm font-semibold transition-colors"
-        >
-          Delete application
-        </button>
-      </div>
-
-      <ConfirmDialog
-        open={confirmingDelete}
-        busy={deleting}
-        tone="danger"
-        title="Delete this application?"
-        description={`${application.applicant.name}'s application for "${application.job.title}" will be removed.`}
-        confirmLabel="Delete"
-        onConfirm={confirmDelete}
-        onCancel={() => setConfirmingDelete(false)}
-      />
     </div>
   );
 }

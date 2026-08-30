@@ -3,12 +3,13 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { ConfirmDialog } from "@/app/_components/ConfirmDialog";
 import { Close } from "@/app/_components/Icons";
 import { SearchInput } from "@/app/_components/SearchInput";
 import { Select } from "@/app/_components/Select";
 import { Table, type Column } from "@/app/_components/Table";
-import { ActionButton, Badge, Pager } from "@/app/admin/_components/table-ui";
+import { ActionButton, Pager } from "@/app/admin/_components/table-ui";
+import { StatusBadge } from "@/app/admin/applications/StatusBadge";
+import { STATUS_LABEL } from "@/app/admin/applications/status-styles";
 import { redirectOnDenied } from "@/lib/auth-redirect";
 import { formatDateTime, formatRelativeTime } from "@/lib/date";
 import { JOB_APPLICATION_STATUSES, type JobApplicationStatus } from "@/types/job-application";
@@ -21,20 +22,8 @@ const PAGE_SIZE = 15;
 
 const STATUS_OPTIONS = [
   { value: "", label: "All statuses" },
-  ...JOB_APPLICATION_STATUSES.map((s) => ({ value: s, label: statusLabel(s) })),
+  ...JOB_APPLICATION_STATUSES.map((s) => ({ value: s, label: STATUS_LABEL[s] })),
 ];
-
-const STATUS_BADGE_TONE: Record<JobApplicationStatus, "neutral" | "brand" | "danger"> = {
-  pending: "neutral",
-  reviewed: "neutral",
-  shortlisted: "brand",
-  hired: "brand",
-  rejected: "danger",
-};
-
-function statusLabel(status: JobApplicationStatus): string {
-  return status.charAt(0).toUpperCase() + status.slice(1);
-}
 
 export function ApplicationList() {
   const router = useRouter();
@@ -52,10 +41,6 @@ export function ApplicationList() {
   const [data, setData] = useState<CursorPage<JobApplicationDTO> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [busyId, setBusyId] = useState<string | null>(null);
-  const [reloadKey, setReloadKey] = useState(0);
-
-  const [deleting, setDeleting] = useState<JobApplicationDTO | null>(null);
 
   function applyQuery(patch: Partial<typeof query>) {
     setQuery((prev) => ({ ...prev, ...patch }));
@@ -140,7 +125,7 @@ export function ApplicationList() {
     return () => {
       alive = false;
     };
-  }, [cursors, query, reloadKey]);
+  }, [cursors, query]);
 
   function goNext() {
     const next = data?.nextCursor;
@@ -148,27 +133,6 @@ export function ApplicationList() {
   }
   function goPrev() {
     setCursors((c) => (c.length > 1 ? c.slice(0, -1) : c));
-  }
-
-  async function confirmDelete() {
-    if (!deleting) return;
-    setBusyId(deleting.id);
-    setError(null);
-    try {
-      const res = await fetch(`/api/v1/applications/${deleting.id}`, { method: "DELETE" });
-      if (redirectOnDenied(res)) return;
-      if (!res.ok) {
-        const json = (await res.json()) as ApiResponse<unknown>;
-        setError(json.success ? "Could not delete that application." : json.error.message);
-        return;
-      }
-      setReloadKey((k) => k + 1);
-    } catch {
-      setError("Could not delete that application. Please try again.");
-    } finally {
-      setBusyId(null);
-      setDeleting(null);
-    }
   }
 
   const columns: Column<JobApplicationDTO>[] = [
@@ -211,7 +175,7 @@ export function ApplicationList() {
     {
       key: "status",
       header: "Status",
-      cell: (a) => <Badge tone={STATUS_BADGE_TONE[a.status]}>{statusLabel(a.status)}</Badge>,
+      cell: (a) => <StatusBadge status={a.status} />,
     },
     {
       key: "createdAt",
@@ -227,15 +191,9 @@ export function ApplicationList() {
       header: "",
       align: "right",
       cell: (a) => (
-        <div className="flex justify-end gap-2">
-          <ActionButton
-            disabled={busyId === a.id}
-            onClick={() => router.push(`/admin/applications/${a.id}`)}
-          >
+        <div className="flex justify-end">
+          <ActionButton onClick={() => router.push(`/admin/applications/${a.id}`)}>
             View
-          </ActionButton>
-          <ActionButton tone="danger" disabled={busyId === a.id} onClick={() => setDeleting(a)}>
-            Delete
           </ActionButton>
         </div>
       ),
@@ -337,21 +295,6 @@ export function ApplicationList() {
           onNext={goNext}
         />
       ) : null}
-
-      <ConfirmDialog
-        open={deleting !== null}
-        busy={deleting ? busyId === deleting.id : false}
-        tone="danger"
-        title="Delete this application?"
-        description={
-          deleting
-            ? `${deleting.applicant.name}'s application for "${deleting.job.title}" will be removed.`
-            : null
-        }
-        confirmLabel="Delete"
-        onConfirm={confirmDelete}
-        onCancel={() => setDeleting(null)}
-      />
     </div>
   );
 }

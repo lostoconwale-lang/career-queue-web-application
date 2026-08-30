@@ -7,7 +7,6 @@ import Nav from "@/app/_components/Nav";
 import { Buildings, Clock } from "@/app/_components/Icons";
 import { CompanyLogo } from "@/app/_components/jobs/CompanyLogo";
 import { ApplyButton } from "@/app/jobs/[id]/ApplyButton";
-import { BackToResults } from "@/app/jobs/[id]/BackToResults";
 import { auth } from "@/lib/auth/nextauth";
 import { connectToDatabase } from "@/lib/db/mongoose";
 import { getPublicJobById } from "@/lib/services/public-job.service";
@@ -55,9 +54,7 @@ export default async function JobDetailPage({ params }: { params: Promise<Params
     <>
       <Nav />
       <main>
-        <div className="mx-auto  px-5 py-10 sm:px-8 sm:py-14">
-          {/* <BackToResults /> */}
-
+        <div className="mx-auto px-5 py-10 sm:px-8 sm:py-14">
           <div className="mt-6 overflow-hidden rounded-card">
             {job.coverImage ? (
               // eslint-disable-next-line @next/next/no-img-element
