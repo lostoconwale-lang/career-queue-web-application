@@ -1,14 +1,38 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
-import { faqs } from "../_data";
+import type { ApiResponse } from "@/types/api";
+import type { PublicFaqDTO } from "@/types/public-faq";
 import { Chevron } from "./Icons";
 import Reveal from "./Reveal";
 
 export default function FAQ() {
-  const [openIndex, setOpenIndex] = useState<number | null>(0);
+  const [faqs, setFaqs] = useState<PublicFaqDTO[]>([]);
+  const [openId, setOpenId] = useState<string | null>(null);
+
+  // Active FAQ entries — cached + tag-revalidated on the server
+  // (/api/v1/public/faqs), so this is a cheap hit and refreshes whenever an
+  // admin edits the FAQ list.
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/v1/public/faqs")
+      .then((res) => res.json() as Promise<ApiResponse<PublicFaqDTO[]>>)
+      .then((json) => {
+        if (!alive || !json.success) return;
+        setFaqs(json.data);
+        setOpenId(json.data[0]?.id ?? null);
+      })
+      .catch(() => {
+        // A failed fetch just leaves the section empty — nothing to surface.
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  if (faqs.length === 0) return null;
 
   return (
     <section id="faq" className="mx-auto max-w-3xl px-5 py-24 sm:px-8 sm:py-32">
@@ -21,10 +45,10 @@ export default function FAQ() {
 
       <div className="mt-12 space-y-3">
         {faqs.map((faq, index) => {
-          const isOpen = openIndex === index;
+          const isOpen = openId === faq.id;
 
           return (
-            <Reveal key={faq.question} delay={index * 0.05}>
+            <Reveal key={faq.id} delay={index * 0.05}>
               <div
                 className={`rounded-card bg-surface border transition-colors duration-300 ${
                   isOpen
@@ -34,9 +58,9 @@ export default function FAQ() {
               >
                 <button
                   type="button"
-                  onClick={() => setOpenIndex(isOpen ? null : index)}
+                  onClick={() => setOpenId(isOpen ? null : faq.id)}
                   aria-expanded={isOpen}
-                  aria-controls={`faq-answer-${index}`}
+                  aria-controls={`faq-answer-${faq.id}`}
                   className="flex w-full items-center justify-between gap-6 px-6 py-5 text-left"
                 >
                   <span
@@ -62,7 +86,7 @@ export default function FAQ() {
                 <AnimatePresence initial={false}>
                   {isOpen && (
                     <motion.div
-                      id={`faq-answer-${index}`}
+                      id={`faq-answer-${faq.id}`}
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: "auto", opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}

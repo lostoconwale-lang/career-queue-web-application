@@ -6,6 +6,7 @@ import { requireAdmin } from "@/lib/auth/guards";
 import { objectIdSchema } from "@/lib/validators/common";
 import { updateFaqBodySchema } from "@/lib/validators/faq.validator";
 import { deleteFaq, getFaqById, updateFaq } from "@/lib/services/faq.service";
+import { revalidatePublicFaqs } from "@/lib/services/public-faq.service";
 import { activityActor, logFaqDeleted, logFaqUpdated } from "@/lib/services/activity-log.service";
 
 export const runtime = "nodejs";
@@ -31,6 +32,7 @@ export const PUT = withRoute<Params>(async (req, { params }) => {
   requireAdmin(ctx);
   const patch = await parseJsonBody(req, updateFaqBodySchema);
   const faq = await updateFaq(parseId(params), patch);
+  revalidatePublicFaqs();
   await logFaqUpdated(await activityActor(ctx.id), faq, patch);
   return jsonOk(faq);
 });
@@ -40,6 +42,7 @@ export const DELETE = withRoute<Params>(async (req, { params }) => {
   const ctx = await requireAuth(req);
   requireAdmin(ctx);
   const faq = await deleteFaq(parseId(params));
+  revalidatePublicFaqs();
   await logFaqDeleted(await activityActor(ctx.id), faq);
   return jsonNoContent();
 });

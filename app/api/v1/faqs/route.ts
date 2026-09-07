@@ -6,6 +6,7 @@ import { requireAuth } from "@/lib/auth/authenticate";
 import { requireAdmin } from "@/lib/auth/guards";
 import { createFaqBodySchema, listFaqsQuerySchema } from "@/lib/validators/faq.validator";
 import { createFaq, listFaqs } from "@/lib/services/faq.service";
+import { revalidatePublicFaqs } from "@/lib/services/public-faq.service";
 import { activityActor, logFaqCreated } from "@/lib/services/activity-log.service";
 
 export const runtime = "nodejs";
@@ -22,6 +23,7 @@ export const POST = withRoute(async (req: NextRequest) => {
   const ctx = await requireAuth(req);
   requireAdmin(ctx);
   const faq = await createFaq(await parseJsonBody(req, createFaqBodySchema));
+  revalidatePublicFaqs();
   await logFaqCreated(await activityActor(ctx.id), faq);
   return jsonCreated(faq);
 });

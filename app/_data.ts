@@ -113,21 +113,3 @@ export const testimonials = [
     avatar: "/images/avatar-2.png",
   },
 ];
-
-export const faqs = [
-  {
-    question: "How does matching actually work?",
-    answer:
-      "You tell us your target role, salary floor, location rules and the kind of team you want. We score every open job against those answers and rank what clears your bar. Each match comes with a short note explaining which of your criteria it hit — and which it missed.",
-  },
-  {
-    question: "Is it really free?",
-    answer:
-      "Yes, and it stays that way. Searching, matching, your profile and every application are free forever — no trial, no card, no upsell.",
-  },
-  {
-    question: "Will my current employer see my profile?",
-    answer:
-      "No. Your profile is private until you apply somewhere, and you can block specific companies by name so your details never surface to them even after you do.",
-  },
-];
