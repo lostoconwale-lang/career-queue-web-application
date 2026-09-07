@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
-import type { City } from "../_data";
+import type { PublicCityDTO } from "@/types/public-city";
 import { Check, Chevron, Pin } from "./Icons";
 
 const ANY_CITY = "Any city";
@@ -13,14 +13,14 @@ export default function CitySelect({
   value,
   onChange,
 }: {
-  cities: City[];
+  cities: PublicCityDTO[];
   value: string;
   onChange: (cityId: string) => void;
 }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
-  const selected = cities.find((city) => city._id === value);
+  const selected = cities.find((city) => city.id === value);
 
   useEffect(() => {
     if (!open) return;
@@ -76,14 +76,14 @@ export default function CitySelect({
             transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
             className="rounded-card border-line bg-surface shadow-lift absolute top-full left-0 z-50 mt-3 w-full min-w-56 origin-top border p-2"
           >
-            {[{ _id: "", name: ANY_CITY }, ...cities].map((city) => {
-              const isSelected = city._id === value;
+            {[{ id: "", name: ANY_CITY }, ...cities].map((city) => {
+              const isSelected = city.id === value;
 
               return (
-                <li key={city._id || "any"} role="option" aria-selected={isSelected}>
+                <li key={city.id || "any"} role="option" aria-selected={isSelected}>
                   <button
                     type="button"
-                    onClick={() => choose(city._id)}
+                    onClick={() => choose(city.id)}
                     className={`flex w-full items-center justify-between gap-3 rounded-2xl px-4 py-2.5 text-left text-sm transition-colors ${
                       isSelected
                         ? "bg-brand-soft text-brand font-semibold"

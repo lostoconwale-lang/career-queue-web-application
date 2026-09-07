@@ -32,7 +32,7 @@ export default function JobCardMockup({ job }: { job: JobCard }) {
         ))}
       </ul>
 
-      <p className="text-ink mt-4 text-sm font-semibold">{job.salary}</p>
+      
     </article>
   );
 }

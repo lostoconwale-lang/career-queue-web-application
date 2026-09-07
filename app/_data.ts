@@ -1,5 +1,3 @@
-import citiesJson from "./cities.json";
-
 export type JobCard = {
   company: string;
   logo: string;
@@ -33,10 +31,6 @@ export const heroJobCards: JobCard[] = [
 ];
 
 export const quickFilters = ["Remote", "Design", "Engineering", "Marketing", "Product", "Data"];
-
-export type City = { _id: string; name: string };
-
-export const cities: City[] = citiesJson;
 
 export type JobCategory = { _id: string; name: string; openRoles: number };
 

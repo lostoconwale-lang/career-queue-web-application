@@ -6,6 +6,7 @@ import { requireAdmin } from "@/lib/auth/guards";
 import { objectIdSchema } from "@/lib/validators/common";
 import { updateCityBodySchema } from "@/lib/validators/city.validator";
 import { deleteCity, updateCity } from "@/lib/services/city.service";
+import { revalidatePublicCities } from "@/lib/services/public-city.service";
 import {
   activityActor,
   logCityDeleted,
@@ -29,6 +30,7 @@ export const PUT = withRoute<Params>(async (req, { params }) => {
   requireAdmin(ctx);
   const patch = await parseJsonBody(req, updateCityBodySchema);
   const city = await updateCity(parseId(params), patch);
+  revalidatePublicCities();
   await logCityUpdated(await activityActor(ctx.id), city, patch);
   return jsonOk(city);
 });
@@ -38,6 +40,7 @@ export const DELETE = withRoute<Params>(async (req, { params }) => {
   const ctx = await requireAuth(req);
   requireAdmin(ctx);
   const city = await deleteCity(parseId(params));
+  revalidatePublicCities();
   await logCityDeleted(await activityActor(ctx.id), city);
   return jsonNoContent();
 });

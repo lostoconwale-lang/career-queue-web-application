@@ -15,7 +15,10 @@ const floatPositions = [
 
 export default function Hero() {
   return (
-    <section id="top" className="relative overflow-hidden pb-24">
+    // overflow-x-clip (not overflow-hidden) contains the floating cards and
+    // background bleed horizontally without trapping the city dropdown, which
+    // needs to overflow the section vertically.
+    <section id="top" className="relative overflow-x-clip pb-24">
       <Image
         src="/images/hero-bg-texture.png"
         alt=""

@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { cities, quickFilters } from "../_data";
+import type { ApiResponse } from "@/types/api";
+import type { PublicCityDTO } from "@/types/public-city";
+import { quickFilters } from "../_data";
 import CitySelect from "./CitySelect";
 import { SearchGlass } from "./Icons";
 
@@ -11,14 +13,42 @@ export default function HeroSearch() {
   const router = useRouter();
   const [role, setRole] = useState("");
   const [cityId, setCityId] = useState("");
+  const [cities, setCities] = useState<PublicCityDTO[]>([]);
+
+  // Active cities for the picker — cached + tag-revalidated on the server
+  // (/api/v1/public/cities), so this is a cheap hit on every landing view.
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/v1/public/cities")
+      .then((res) => res.json() as Promise<ApiResponse<PublicCityDTO[]>>)
+      .then((json) => {
+        if (alive && json.success) setCities(json.data);
+      })
+      .catch(() => {
+        // A failed city fetch just leaves the picker at "Any city" — the
+        // keyword search still works, so there's nothing to surface here.
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  function runSearch() {
+    const params = new URLSearchParams();
+    if (role.trim()) params.set("q", role.trim());
+    // Jobs carry no location yet, so the city only rides along in the URL —
+    // the listing picks it up once a job location field exists.
+    if (cityId) params.set("city", cityId);
+    const qs = params.toString();
+    router.push(qs ? `/jobs?${qs}` : "/jobs");
+  }
 
   return (
     <div className="w-full">
       <form
         onSubmit={(event) => {
           event.preventDefault();
-          // No location field exists on a job yet, so only the keyword carries over.
-          router.push(role.trim() ? `/jobs?q=${encodeURIComponent(role.trim())}` : "/jobs");
+          runSearch();
         }}
         className="border-line bg-surface shadow-soft flex flex-col gap-2 rounded-3xl border p-2 sm:flex-row sm:items-center sm:rounded-full sm:p-2.5"
       >
