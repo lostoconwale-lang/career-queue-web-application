@@ -5,4 +5,6 @@ export const CACHE_TAGS = {
   publicCities: "public-cities",
   // The active FAQ entries shown on the home page.
   publicFaqs: "public-faqs",
+  // The active testimonials shown on the home page.
+  publicTestimonials: "public-testimonials",
 } as const;

@@ -10,6 +10,7 @@ import {
   getTestimonialById,
   updateTestimonial,
 } from "@/lib/services/testimonial.service";
+import { revalidatePublicTestimonials } from "@/lib/services/public-testimonial.service";
 import {
   activityActor,
   logTestimonialDeleted,
@@ -39,6 +40,7 @@ export const PUT = withRoute<Params>(async (req, { params }) => {
   requireAdmin(ctx);
   const patch = await parseJsonBody(req, updateTestimonialBodySchema);
   const testimonial = await updateTestimonial(parseId(params), patch);
+  revalidatePublicTestimonials();
   await logTestimonialUpdated(await activityActor(ctx.id), testimonial, patch);
   return jsonOk(testimonial);
 });
@@ -48,6 +50,7 @@ export const DELETE = withRoute<Params>(async (req, { params }) => {
   const ctx = await requireAuth(req);
   requireAdmin(ctx);
   const testimonial = await deleteTestimonial(parseId(params));
+  revalidatePublicTestimonials();
   await logTestimonialDeleted(await activityActor(ctx.id), testimonial);
   return jsonNoContent();
 });

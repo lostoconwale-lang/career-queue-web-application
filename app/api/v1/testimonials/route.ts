@@ -9,6 +9,7 @@ import {
   listTestimonialsQuerySchema,
 } from "@/lib/validators/testimonial.validator";
 import { createTestimonial, listTestimonials } from "@/lib/services/testimonial.service";
+import { revalidatePublicTestimonials } from "@/lib/services/public-testimonial.service";
 import { activityActor, logTestimonialCreated } from "@/lib/services/activity-log.service";
 
 export const runtime = "nodejs";
@@ -27,6 +28,7 @@ export const POST = withRoute(async (req: NextRequest) => {
   const testimonial = await createTestimonial(
     await parseJsonBody(req, createTestimonialBodySchema),
   );
+  revalidatePublicTestimonials();
   await logTestimonialCreated(await activityActor(ctx.id), testimonial);
   return jsonCreated(testimonial);
 });

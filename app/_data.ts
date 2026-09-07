@@ -82,34 +82,3 @@ export const features = [
     points: ["One-click apply", "Live application status", "Private until you apply"],
   },
 ];
-
-export const testimonials = [
-  {
-    quote:
-      "Three weeks from signing up to signing an offer. The matches were the first ones that actually respected my salary floor.",
-    name: "Priya Raghunathan",
-    role: "Staff Engineer, Cartogram",
-    avatar: "/images/avatar-1.png",
-  },
-  {
-    quote:
-      "I'd been scrolling job boards for months. CareerQueue showed me eleven roles and four of them were genuinely right.",
-    name: "Daniel Okonkwo",
-    role: "Product Designer, Halcyon",
-    avatar: "/images/avatar-2.png",
-  },
-  {
-    quote:
-      "The part I didn't expect: it tells you why a job matched. That alone saved me hours of guessing.",
-    name: "Tomás Herrera",
-    role: "Data Analyst, Meridian",
-    avatar: "/images/avatar-1.png",
-  },
-  {
-    quote:
-      "One profile, twelve applications, no retyping my work history a single time. That's the whole pitch and it delivers.",
-    name: "Aisling Byrne",
-    role: "Marketing Lead, Persimmon",
-    avatar: "/images/avatar-2.png",
-  },
-];
