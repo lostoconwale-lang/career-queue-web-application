@@ -16,7 +16,7 @@ export default function CTA() {
           Tell us what a good job looks like to you. We&apos;ll do the digging — free, forever.
         </p>
         <Link
-          href="/register"
+          href="/jobs"
           className="group bg-ink text-surface shadow-lift mt-10 inline-flex items-center gap-2 rounded-full px-8 py-4 font-semibold transition-transform hover:-translate-y-0.5"
         >
           Start matching
