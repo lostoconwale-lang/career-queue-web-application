@@ -1,12 +1,16 @@
-import Image from "next/image";
+import type { Route } from "next";
+import Link from "next/link";
 
 import type { JobCard } from "../_data";
 
 export default function JobCardMockup({ job }: { job: JobCard }) {
-  return (
-    <article className="rounded-card border-line bg-surface shadow-lift w-full max-w-64 border p-5">
+  const className = "rounded-card border-line bg-surface shadow-lift block w-full max-w-64 border p-5";
+
+  const content = (
+    <>
       <div className="flex items-center gap-3">
-        <Image
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
           src={job.logo}
           alt=""
           width={44}
@@ -32,7 +36,17 @@ export default function JobCardMockup({ job }: { job: JobCard }) {
         ))}
       </ul>
 
-      
-    </article>
+      {job.salary ? <p className="text-ink mt-3 text-sm font-semibold">{job.salary}</p> : null}
+    </>
   );
+
+  if (job.href) {
+    return (
+      <Link href={job.href as Route} className={className}>
+        {content}
+      </Link>
+    );
+  }
+
+  return <article className={className}>{content}</article>;
 }

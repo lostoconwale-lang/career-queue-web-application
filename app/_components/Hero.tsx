@@ -3,13 +3,13 @@
 import Image from "next/image";
 
 import type { PublicHeroDTO } from "@/types/public-hero";
-import { heroJobCards } from "../_data";
 import HeroSearch from "./HeroSearch";
 import JobCardMockup from "./JobCardMockup";
 import { Sparkle, Squiggle } from "./Icons";
 
 const avatars = ["/images/avatar-1.png", "/images/avatar-2.png", "/images/avatar-3.png"];
 
+// Only 3 floating positions are laid out — see HERO_JOB_CARDS_LIMIT.
 const floatPositions = [
   "top-40 left-2 -rotate-6",
   "top-24 right-2 rotate-6",
@@ -17,6 +17,15 @@ const floatPositions = [
 ];
 
 export default function Hero({ content }: { content: PublicHeroDTO }) {
+  const jobCards = content.jobCards.map((c) => ({
+    company: c.companyName,
+    logo: c.logoUrl,
+    title: c.jobTitle,
+    tags: c.tags,
+    salary: c.salary,
+    href: c.jobId ? `/jobs/${c.jobId}` : null,
+  }));
+
   return (
     // overflow-x-clip (not overflow-hidden) contains the floating cards and
     // background bleed horizontally without trapping the city dropdown, which
@@ -32,7 +41,7 @@ export default function Hero({ content }: { content: PublicHeroDTO }) {
       />
 
       <div className="pointer-events-none absolute inset-0 mx-auto hidden max-w-[1500px] xl:block">
-        {heroJobCards.map((job, index) => (
+        {jobCards.slice(0, floatPositions.length).map((job, index) => (
           <div
             key={job.company}
             className={`animate-float absolute w-64 ${floatPositions[index]}`}
@@ -70,7 +79,7 @@ export default function Hero({ content }: { content: PublicHeroDTO }) {
         </p>
 
         <div className="mx-auto mt-10 max-w-3xl">
-          <HeroSearch />
+          <HeroSearch quickFilters={content.quickFilters} />
         </div>
 
         <div className="mt-12 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
@@ -94,7 +103,7 @@ export default function Hero({ content }: { content: PublicHeroDTO }) {
         </div>
 
         <div className="mt-16 grid gap-5 md:grid-cols-3 xl:hidden">
-          {heroJobCards.map((job, index) => (
+          {jobCards.map((job, index) => (
             <div key={job.company} className={`mx-auto ${index === 1 ? "rotate-2" : "-rotate-2"}`}>
               <JobCardMockup job={job} />
             </div>

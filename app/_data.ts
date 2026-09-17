@@ -4,33 +4,8 @@ export type JobCard = {
   title: string;
   tags: string[];
   salary: string;
+  href: string | null;
 };
-
-export const heroJobCards: JobCard[] = [
-  {
-    company: "Lumen Labs",
-    logo: "/images/hero-card-mockup-1.png",
-    title: "Senior Product Designer",
-    tags: ["Remote", "Full-time"],
-    salary: "$120k – $150k",
-  },
-  {
-    company: "Northwind",
-    logo: "/images/hero-card-mockup-2.png",
-    title: "Frontend Engineer",
-    tags: ["Hybrid", "Berlin"],
-    salary: "€75k – €95k",
-  },
-  {
-    company: "Persimmon",
-    logo: "/images/hero-card-mockup-3.png",
-    title: "Growth Marketer",
-    tags: ["Remote", "Contract"],
-    salary: "$90k – $110k",
-  },
-];
-
-export const quickFilters = ["Remote", "Design", "Engineering", "Marketing", "Product", "Data"];
 
 export type JobCategory = { _id: string; name: string; openRoles: number };
 

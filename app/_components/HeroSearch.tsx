@@ -5,11 +5,10 @@ import { useRouter } from "next/navigation";
 
 import type { ApiResponse } from "@/types/api";
 import type { PublicCityDTO } from "@/types/public-city";
-import { quickFilters } from "../_data";
 import CitySelect from "./CitySelect";
 import { SearchGlass } from "./Icons";
 
-export default function HeroSearch() {
+export default function HeroSearch({ quickFilters }: { quickFilters: string[] }) {
   const router = useRouter();
   const [role, setRole] = useState("");
   const [cityId, setCityId] = useState("");

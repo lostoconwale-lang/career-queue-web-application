@@ -2,6 +2,7 @@ import "server-only";
 import { revalidateTag, unstable_cache } from "next/cache";
 
 import { connectToDatabase } from "@/lib/db/mongoose";
+import { mediaUrl } from "@/lib/media";
 import { CACHE_TAGS } from "@/lib/cache/tags";
 import { Hero, HERO_KEY } from "@/lib/models/hero.model";
 import type { PublicHeroDTO } from "@/types/public-hero";
@@ -22,6 +23,17 @@ async function queryPublicHero(): Promise<PublicHeroDTO> {
       doc?.subtext ??
       "We match people to jobs that actually fit — the team, the pay, the pace — instead of whatever got posted most recently.",
     trustText: doc?.trustText ?? "Trusted by job seekers at 500+ companies",
+    quickFilters: doc?.quickFilters ?? ["Remote", "Design", "Engineering", "Marketing", "Product", "Data"],
+    jobCards: (doc?.jobCards ?? [])
+      .filter((c) => c.isActive)
+      .map((c) => ({
+        companyName: c.companyName,
+        logoUrl: mediaUrl(c.logo.key),
+        jobTitle: c.jobTitle,
+        tags: [...c.tags],
+        salary: c.salary,
+        jobId: c.jobId ? c.jobId.toString() : null,
+      })),
   };
 }
 
