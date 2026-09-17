@@ -4,6 +4,7 @@ import type { EmbeddedMediaDTO } from "@/types/media";
 // (see `floatPositions` in Hero.tsx) — more than that has nowhere to go.
 export const HERO_JOB_CARDS_LIMIT = 3;
 export const HERO_QUICK_FILTERS_LIMIT = 8;
+export const HERO_AVATARS_LIMIT = 6;
 
 // A snapshot of the job a card links to — just enough to show what's picked.
 export interface HeroJobCardLinkedJob {
@@ -32,5 +33,6 @@ export interface HeroDTO {
   trustText: string;
   quickFilters: string[];
   jobCards: HeroJobCardDTO[];
+  avatars: EmbeddedMediaDTO[];
   updatedAt: string;
 }

@@ -29,6 +29,7 @@ export interface HeroDoc {
   trustText: string;
   quickFilters: string[];
   jobCards: HeroJobCard[];
+  avatars: EmbeddedMedia[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -67,6 +68,7 @@ const heroSchema = new Schema<HeroDoc, HeroModel>(
       default: ["Remote", "Design", "Engineering", "Marketing", "Product", "Data"],
     },
     jobCards: { type: [heroJobCardSchema], default: [] },
+    avatars: { type: [embeddedMediaSchema], default: [] },
   },
   { timestamps: true },
 );

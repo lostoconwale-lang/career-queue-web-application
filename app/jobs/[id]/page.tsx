@@ -1,5 +1,5 @@
 import { cache } from "react";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 
 import Footer from "@/app/_components/Footer";
@@ -7,7 +7,6 @@ import Nav from "@/app/_components/Nav";
 import { Buildings, Clock } from "@/app/_components/Icons";
 import { CompanyLogo } from "@/app/_components/jobs/CompanyLogo";
 import { ApplyButton } from "@/app/jobs/[id]/ApplyButton";
-import { auth } from "@/lib/auth/nextauth";
 import { connectToDatabase } from "@/lib/db/mongoose";
 import { getPublicJobById } from "@/lib/services/public-job.service";
 import { formatRelativeTime } from "@/lib/date";
@@ -34,12 +33,10 @@ export async function generateMetadata({
   return { title: job ? `${job.title} — CareerQueue` : "Job not found — CareerQueue" };
 }
 
-// Server-rendered: fetches directly through the service layer (no HTTP round
-// trip to our own API, since this already runs on the server).
+// Auth is enforced by middleware.ts. Server-rendered: fetches directly
+// through the service layer (no HTTP round trip to our own API, since this
+// already runs on the server).
 export default async function JobDetailPage({ params }: { params: Promise<Params> }) {
-  const session = await auth();
-  if (!session?.user?.id) redirect("/login");
-
   const { id } = await params;
   const job = await loadJob(id);
   if (!job) notFound();

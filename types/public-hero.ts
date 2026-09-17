@@ -18,4 +18,5 @@ export interface PublicHeroDTO {
   trustText: string;
   quickFilters: string[];
   jobCards: PublicHeroJobCardDTO[];
+  avatars: string[];
 }

@@ -49,7 +49,7 @@ const NAV: NavEntry[] = [
   { label: "Jobs", href: "/admin/jobs", icon: Briefcase },
   { label: "Applications", href: "/admin/applications", icon: Mail },
   {
-    label: "Customise your site",
+    label: "Manage content",
     icon: Grid,
     children: [{ label: "Hero section", href: "/admin/hero", icon: Sparkle }],
   },

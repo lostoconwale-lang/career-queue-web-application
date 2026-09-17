@@ -34,6 +34,7 @@ async function queryPublicHero(): Promise<PublicHeroDTO> {
         salary: c.salary,
         jobId: c.jobId ? c.jobId.toString() : null,
       })),
+    avatars: (doc?.avatars ?? []).map((a) => mediaUrl(a.key)),
   };
 }
 

@@ -7,8 +7,6 @@ import HeroSearch from "./HeroSearch";
 import JobCardMockup from "./JobCardMockup";
 import { Sparkle, Squiggle } from "./Icons";
 
-const avatars = ["/images/avatar-1.png", "/images/avatar-2.png", "/images/avatar-3.png"];
-
 // Only 3 floating positions are laid out — see HERO_JOB_CARDS_LIMIT.
 const floatPositions = [
   "top-40 left-2 -rotate-6",
@@ -83,22 +81,25 @@ export default function Hero({ content }: { content: PublicHeroDTO }) {
         </div>
 
         <div className="mt-12 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-          <ul className="flex -space-x-3">
-            {avatars.map((avatar) => (
-              <li key={avatar}>
-                <Image
-                  src={avatar}
-                  alt=""
-                  width={40}
-                  height={40}
-                  className="border-surface bg-brand-soft h-10 w-10 rounded-full border-2 object-cover"
-                />
+          {content.avatars.length > 0 ? (
+            <ul className="flex -space-x-3">
+              {content.avatars.map((avatar, index) => (
+                <li key={index}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={avatar}
+                    alt=""
+                    width={40}
+                    height={40}
+                    className="border-surface bg-brand-soft h-10 w-10 rounded-full border-2 object-cover"
+                  />
+                </li>
+              ))}
+              <li className="border-surface bg-ink text-surface grid h-10 w-10 place-items-center rounded-full border-2 text-xs font-semibold">
+                +
               </li>
-            ))}
-            <li className="border-surface bg-ink text-surface grid h-10 w-10 place-items-center rounded-full border-2 text-xs font-semibold">
-              +
-            </li>
-          </ul>
+            </ul>
+          ) : null}
           <p className="text-muted text-sm">{content.trustText}</p>
         </div>
 

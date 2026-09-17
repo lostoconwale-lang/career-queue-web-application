@@ -11,7 +11,12 @@ import { JobPicker } from "@/app/admin/_components/JobPicker";
 import { Switch } from "@/app/admin/_components/table-ui";
 import { redirectOnDenied } from "@/lib/auth-redirect";
 import type { ApiResponse } from "@/types/api";
-import { HERO_JOB_CARDS_LIMIT, HERO_QUICK_FILTERS_LIMIT, type HeroDTO } from "@/types/hero";
+import {
+  HERO_AVATARS_LIMIT,
+  HERO_JOB_CARDS_LIMIT,
+  HERO_QUICK_FILTERS_LIMIT,
+  type HeroDTO,
+} from "@/types/hero";
 import type { EmbeddedMediaDTO } from "@/types/media";
 import type { JobDTO } from "@/types/job";
 
@@ -77,6 +82,8 @@ export function HeroForm() {
   const [jobCards, setJobCards] = useState<DraftJobCard[]>([]);
   const [pickingJobFor, setPickingJobFor] = useState<string | null>(null);
 
+  const [avatars, setAvatars] = useState<EmbeddedMediaDTO[]>([]);
+
   const [submitted, setSubmitted] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -101,6 +108,7 @@ export function HeroForm() {
         setSubtext(h.subtext);
         setTrustText(h.trustText);
         setQuickFilters(h.quickFilters);
+        setAvatars(h.avatars);
         setJobCards(
           h.jobCards.map((c) => ({
             key: crypto.randomUUID(),
@@ -201,6 +209,14 @@ export function HeroForm() {
     setJobCards((prev) => prev.filter((c) => c.key !== key));
   }
 
+  function addAvatar(media: EmbeddedMediaDTO | null) {
+    if (media) setAvatars((prev) => [...prev, media]);
+  }
+
+  function removeAvatar(index: number) {
+    setAvatars((prev) => prev.filter((_, i) => i !== index));
+  }
+
   const previewJobCards = jobCards
     .filter((c) => c.isActive && c.logo && c.companyName.trim() && c.jobTitle.trim())
     .map((c) => ({
@@ -222,6 +238,7 @@ export function HeroForm() {
     trustText,
     quickFilters,
     jobCards: previewJobCards,
+    avatars: avatars.map((a) => a.url),
   };
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -251,6 +268,7 @@ export function HeroForm() {
           subtext: subtext.trim(),
           trustText: trustText.trim(),
           quickFilters,
+          avatars: avatars.map((a) => ({ key: a.key })),
           jobCards: jobCards.map((c) => ({
             companyName: c.companyName.trim(),
             logo: c.logo ? { key: c.logo.key } : null,
@@ -426,6 +444,52 @@ export function HeroForm() {
                   error={fieldError("trustText")}
                   onChange={(e) => setTrustText(e.target.value)}
                 />
+
+                <div>
+                  <span className="text-ink text-sm font-medium">Avatars</span>
+                  <p className="text-muted mt-0.5 text-xs">
+                    The small photos next to the trust line. Shown as circles — up to{" "}
+                    {HERO_AVATARS_LIMIT}.
+                  </p>
+
+                  {avatars.length > 0 ? (
+                    <div className="mt-3 flex flex-wrap gap-3">
+                      {avatars.map((avatar, index) => (
+                        <div key={avatar.id} className="group relative h-16 w-16 shrink-0">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={avatar.url}
+                            alt=""
+                            className="border-line bg-cream h-16 w-16 rounded-full border object-cover"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeAvatar(index)}
+                            aria-label={`Remove avatar ${index + 1}`}
+                            className="bg-ink text-surface absolute -top-1.5 -right-1.5 grid h-5 w-5 place-items-center rounded-full opacity-0 transition-opacity group-hover:opacity-100"
+                          >
+                            <Close className="h-3 w-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+
+                  {avatars.length < HERO_AVATARS_LIMIT ? (
+                    <div className="mt-3">
+                      <ImageField
+                        label="Add an avatar"
+                        aspect="aspect-square"
+                        value={null}
+                        onChange={addAvatar}
+                      />
+                    </div>
+                  ) : (
+                    <p className="text-muted mt-3 text-xs">
+                      You&apos;ve reached the limit of {HERO_AVATARS_LIMIT} avatars.
+                    </p>
+                  )}
+                </div>
               </div>
             ) : null}
 
@@ -690,6 +754,7 @@ function HeroPreview({
       salary: string;
       jobId: string | null;
     }[];
+    avatars: string[];
   };
 }) {
   const outerRef = useRef<HTMLDivElement>(null);

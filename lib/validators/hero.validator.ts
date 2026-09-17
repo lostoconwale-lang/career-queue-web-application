@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { objectIdSchema } from "@/lib/validators/common";
-import { HERO_JOB_CARDS_LIMIT, HERO_QUICK_FILTERS_LIMIT } from "@/types/hero";
+import { HERO_AVATARS_LIMIT, HERO_JOB_CARDS_LIMIT, HERO_QUICK_FILTERS_LIMIT } from "@/types/hero";
 
 const imageRefSchema = z.object({ key: z.string().trim().min(1).max(300) });
 
@@ -32,5 +32,6 @@ export const updateHeroBodySchema = z.object({
   jobCards: z
     .array(heroJobCardBodySchema)
     .max(HERO_JOB_CARDS_LIMIT, `Only ${HERO_JOB_CARDS_LIMIT} job cards are shown on the home page`),
+  avatars: z.array(imageRefSchema).max(HERO_AVATARS_LIMIT, `At most ${HERO_AVATARS_LIMIT} avatars`),
 });
 export type UpdateHeroBody = z.infer<typeof updateHeroBodySchema>;

@@ -53,6 +53,7 @@ async function toHeroDTO(h: HeroHydrated): Promise<HeroDTO> {
     trustText: h.trustText,
     quickFilters: [...h.quickFilters],
     jobCards: h.jobCards.map((c) => toJobCardDTO(c, linkedJobs)),
+    avatars: h.avatars.map((a) => ({ id: a._id.toString(), key: a.key, url: mediaUrl(a.key) })),
     updatedAt: h.updatedAt.toISOString(),
   };
 }
@@ -84,6 +85,7 @@ export async function updateHero(body: UpdateHeroBody): Promise<HeroDTO> {
   doc.subtext = body.subtext;
   doc.trustText = body.trustText;
   doc.quickFilters = body.quickFilters;
+  doc.set("avatars", body.avatars);
 
   const jobCards = await Promise.all(
     body.jobCards.map(async (c) => ({
