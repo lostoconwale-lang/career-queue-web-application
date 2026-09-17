@@ -12,6 +12,7 @@ export const ACTIVITY_LOG_TYPES = [
   "faq",
   "static-page",
   "settings",
+  "hero",
   "media",
 ] as const;
 export type ActivityLogType = (typeof ACTIVITY_LOG_TYPES)[number];

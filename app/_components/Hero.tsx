@@ -1,5 +1,8 @@
+"use client";
+
 import Image from "next/image";
 
+import type { PublicHeroDTO } from "@/types/public-hero";
 import { heroJobCards } from "../_data";
 import HeroSearch from "./HeroSearch";
 import JobCardMockup from "./JobCardMockup";
@@ -13,7 +16,7 @@ const floatPositions = [
   "bottom-16 right-10 -rotate-3",
 ];
 
-export default function Hero() {
+export default function Hero({ content }: { content: PublicHeroDTO }) {
   return (
     // overflow-x-clip (not overflow-hidden) contains the floating cards and
     // background bleed horizontally without trapping the city dropdown, which
@@ -43,28 +46,27 @@ export default function Hero() {
       <div className="relative mx-auto max-w-4xl px-5 pt-16 text-center sm:px-8 sm:pt-24">
         <p className="border-line bg-surface/80 text-muted inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-sm font-medium">
           <Sparkle className="text-coral h-3.5 w-3.5" />
-          Now matching 12,400 open roles
+          {content.badgeText}
         </p>
 
         <h1 className="font-display text-ink mt-8 tracking-tight">
           <span className="block text-5xl leading-[0.95] font-semibold sm:text-6xl lg:text-7xl">
-            Great careers
+            {content.headlineLine1}
           </span>
           <span className="mt-2 block text-4xl leading-[1.05] font-light italic sm:text-5xl lg:text-6xl">
-            <span className="text-brand inline-block -rotate-2">&amp; great teams</span>
+            <span className="text-brand inline-block -rotate-2">{content.headlineLine2}</span>
           </span>
           <span className="mt-3 block text-3xl leading-tight font-normal sm:text-4xl lg:text-5xl">
-            don&apos;t happen by{" "}
+            {content.headlineLine3}{" "}
             <span className="relative inline-block rotate-1">
-              accident
+              {content.headlineHighlight}
               <Squiggle className="text-coral absolute -bottom-2 left-0 h-2.5 w-full" />
             </span>
           </span>
         </h1>
 
         <p className="text-muted mx-auto mt-8 max-w-xl text-lg leading-relaxed">
-          We match people to jobs that actually fit — the team, the pay, the pace — instead of
-          whatever got posted most recently.
+          {content.subtext}
         </p>
 
         <div className="mx-auto mt-10 max-w-3xl">
@@ -88,7 +90,7 @@ export default function Hero() {
               +
             </li>
           </ul>
-          <p className="text-muted text-sm">Trusted by job seekers at 500+ companies</p>
+          <p className="text-muted text-sm">{content.trustText}</p>
         </div>
 
         <div className="mt-16 grid gap-5 md:grid-cols-3 xl:hidden">

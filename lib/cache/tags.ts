@@ -9,4 +9,6 @@ export const CACHE_TAGS = {
   publicTestimonials: "public-testimonials",
   // The site-wide settings shown to visitors (e.g. the WhatsApp link).
   publicSettings: "public-settings",
+  // The home page hero content.
+  publicHero: "public-hero",
 } as const;

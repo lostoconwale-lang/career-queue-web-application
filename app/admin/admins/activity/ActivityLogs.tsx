@@ -32,6 +32,7 @@ const TYPE_LABELS: Record<ActivityLogType, string> = {
   faq: "FAQs",
   "static-page": "Pages",
   settings: "Settings",
+  hero: "Hero section",
   media: "Media",
 };
 

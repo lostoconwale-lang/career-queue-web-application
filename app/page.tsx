@@ -6,13 +6,16 @@ import HowItWorks from "./_components/HowItWorks";
 import JobCategories from "./_components/JobCategories";
 import Nav from "./_components/Nav";
 import Testimonials from "./_components/Testimonials";
+import { listPublicHero } from "@/lib/services/public-hero.service";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const heroContent = await listPublicHero();
+
   return (
     <>
       <Nav />
       <main>
-        <Hero />
+        <Hero content={heroContent} />
         <HowItWorks />
         <JobCategories />
         <Testimonials />

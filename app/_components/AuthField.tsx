@@ -11,12 +11,22 @@ type Props = {
   trailing?: ReactNode;
   prefix?: ReactNode;
   error?: string;
+  hint?: string;
 } & InputHTMLAttributes<HTMLInputElement>;
 
 const base =
   "w-full border border-line bg-surface px-4 py-3 text-ink outline-none transition-colors placeholder:text-muted/50 focus:border-brand focus:ring-4 focus:ring-brand/10";
 
-export function AuthField({ label, name, trailing, prefix, error, type = "text", ...rest }: Props) {
+export function AuthField({
+  label,
+  name,
+  trailing,
+  prefix,
+  error,
+  hint,
+  type = "text",
+  ...rest
+}: Props) {
   const [reveal, setReveal] = useState(false);
   const isPassword = type === "password";
 
@@ -58,7 +68,11 @@ export function AuthField({ label, name, trailing, prefix, error, type = "text",
           </button>
         ) : null}
       </div>
-      {error ? <p className="text-coral mt-1.5 text-sm">{error}</p> : null}
+      {error ? (
+        <p className="text-coral mt-1.5 text-sm">{error}</p>
+      ) : hint ? (
+        <p className="text-muted mt-1.5 text-xs">{hint}</p>
+      ) : null}
     </label>
   );
 }
