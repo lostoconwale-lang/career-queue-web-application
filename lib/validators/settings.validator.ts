@@ -21,6 +21,9 @@ export const updateSettingsBodySchema = z.object({
   tagline: z.string().trim().max(200).default(""),
   contactEmail: optionalEmailSchema,
   contactPhone: z.string().trim().max(30).default(""),
+  whatsappNumber: z.string().trim().max(30).default(""),
+  whatsappMessage: z.string().trim().max(500).default(""),
+  whatsappEnabled: z.boolean().default(true),
   logoLight: imageRefSchema.default(null),
   logoDark: imageRefSchema.default(null),
   notificationEmails: z

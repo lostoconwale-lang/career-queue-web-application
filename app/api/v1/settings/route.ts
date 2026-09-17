@@ -6,6 +6,7 @@ import { requireAuth } from "@/lib/auth/authenticate";
 import { requireAdmin } from "@/lib/auth/guards";
 import { updateSettingsBodySchema } from "@/lib/validators/settings.validator";
 import { getSettings, updateSettings } from "@/lib/services/settings.service";
+import { revalidatePublicSettings } from "@/lib/services/public-settings.service";
 import { activityActor, logSettingsUpdated } from "@/lib/services/activity-log.service";
 
 export const runtime = "nodejs";
@@ -22,6 +23,7 @@ export const PUT = withRoute(async (req: NextRequest) => {
   const ctx = await requireAuth(req);
   requireAdmin(ctx);
   const settings = await updateSettings(await parseJsonBody(req, updateSettingsBodySchema));
+  revalidatePublicSettings();
   await logSettingsUpdated(await activityActor(ctx.id));
   return jsonOk(settings);
 });

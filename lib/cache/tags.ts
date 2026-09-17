@@ -7,4 +7,6 @@ export const CACHE_TAGS = {
   publicFaqs: "public-faqs",
   // The active testimonials shown on the home page.
   publicTestimonials: "public-testimonials",
+  // The site-wide settings shown to visitors (e.g. the WhatsApp link).
+  publicSettings: "public-settings",
 } as const;

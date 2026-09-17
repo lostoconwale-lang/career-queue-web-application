@@ -4,6 +4,8 @@ import { Fraunces, Inter } from "next/font/google";
 
 import "./globals.css";
 
+import WhatsAppButton from "./_components/WhatsAppButton";
+
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
@@ -36,7 +38,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       data-scroll-behavior="smooth"
       className={`${inter.variable} ${fraunces.variable}`}
     >
-      <body>{children}</body>
+      <body>
+        {children}
+        <WhatsAppButton />
+      </body>
     </html>
   );
 }

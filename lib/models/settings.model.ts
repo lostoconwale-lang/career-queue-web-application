@@ -29,6 +29,9 @@ export interface SettingsDoc {
   tagline: string;
   contactEmail: string;
   contactPhone: string;
+  whatsappNumber: string;
+  whatsappMessage: string;
+  whatsappEnabled: boolean;
   logoLight: EmbeddedMedia | null;
   logoDark: EmbeddedMedia | null;
   notificationEmails: string[];
@@ -66,6 +69,9 @@ const settingsSchema = new Schema<SettingsDoc, SettingsModel>(
     tagline: { type: String, trim: true, maxlength: 200, default: "" },
     contactEmail: { type: String, trim: true, lowercase: true, maxlength: 254, default: "" },
     contactPhone: { type: String, trim: true, maxlength: 30, default: "" },
+    whatsappNumber: { type: String, trim: true, maxlength: 30, default: "" },
+    whatsappMessage: { type: String, trim: true, maxlength: 500, default: "" },
+    whatsappEnabled: { type: Boolean, default: true },
     logoLight: { type: embeddedMediaSchema, default: null },
     logoDark: { type: embeddedMediaSchema, default: null },
     notificationEmails: { type: [String], default: [] },

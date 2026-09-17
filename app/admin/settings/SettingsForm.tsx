@@ -11,10 +11,12 @@ import {
   LinkedIn,
   Mail,
   Plus,
+  WhatsApp,
   XLogo,
   YouTube,
 } from "@/app/_components/Icons";
 import { ImageField } from "@/app/admin/_components/ImageField";
+import { Switch } from "@/app/admin/_components/table-ui";
 import { redirectOnDenied } from "@/lib/auth-redirect";
 import { emailSchema } from "@/lib/validators/common";
 import type { ApiResponse } from "@/types/api";
@@ -78,6 +80,9 @@ export function SettingsForm() {
   const [tagline, setTagline] = useState("");
   const [contactEmail, setContactEmail] = useState("");
   const [contactPhone, setContactPhone] = useState("");
+  const [whatsappNumber, setWhatsappNumber] = useState("");
+  const [whatsappMessage, setWhatsappMessage] = useState("");
+  const [whatsappEnabled, setWhatsappEnabled] = useState(true);
   const [logoLight, setLogoLight] = useState<EmbeddedMediaDTO | null>(null);
   const [logoDark, setLogoDark] = useState<EmbeddedMediaDTO | null>(null);
 
@@ -114,6 +119,9 @@ export function SettingsForm() {
         setTagline(s.tagline);
         setContactEmail(s.contactEmail);
         setContactPhone(s.contactPhone);
+        setWhatsappNumber(s.whatsappNumber);
+        setWhatsappMessage(s.whatsappMessage);
+        setWhatsappEnabled(s.whatsappEnabled);
         setLogoLight(s.logoLight);
         setLogoDark(s.logoDark);
         setNotificationEmails(s.notificationEmails);
@@ -182,6 +190,9 @@ export function SettingsForm() {
       tagline: tagline.trim(),
       contactEmail: contactEmail.trim(),
       contactPhone: contactPhone.trim(),
+      whatsappNumber: whatsappNumber.trim(),
+      whatsappMessage: whatsappMessage.trim(),
+      whatsappEnabled,
       logoLight: logoLight ? { key: logoLight.key } : null,
       logoDark: logoDark ? { key: logoDark.key } : null,
       notificationEmails,
@@ -353,6 +364,41 @@ export function SettingsForm() {
                 value={contactPhone}
                 onChange={(e) => setContactPhone(e.target.value)}
               />
+              <div className="border-line flex items-center justify-between gap-4 rounded-2xl border p-4 lg:col-span-2">
+                <div className="flex items-center gap-3">
+                  <WhatsApp className="h-5 w-5 text-[#25D366]" />
+                  <div>
+                    <p className="text-ink text-sm font-medium">WhatsApp button</p>
+                    <p className="text-muted text-xs">
+                      Show a floating WhatsApp button on every page.
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  checked={whatsappEnabled}
+                  onChange={setWhatsappEnabled}
+                  label="Enable WhatsApp button"
+                />
+              </div>
+              <SocialField
+                label="WhatsApp number"
+                icon={<WhatsApp className="h-4 w-4" />}
+                type="tel"
+                placeholder="+91 98765 43210"
+                value={whatsappNumber}
+                onChange={setWhatsappNumber}
+              />
+              <label className="block">
+                <span className="text-ink text-sm font-medium">Pretyped message</span>
+                <input
+                  type="text"
+                  value={whatsappMessage}
+                  placeholder="Hi, I'm interested in..."
+                  maxLength={500}
+                  onChange={(e) => setWhatsappMessage(e.target.value)}
+                  className={`mt-2 ${inputClass}`}
+                />
+              </label>
             </div>
           ) : null}
 
@@ -521,6 +567,7 @@ function SocialField({
   value,
   error,
   placeholder,
+  type = "url",
   onChange,
 }: {
   label: string;
@@ -528,6 +575,7 @@ function SocialField({
   value: string;
   error?: string;
   placeholder?: string;
+  type?: "url" | "tel";
   onChange: (value: string) => void;
 }) {
   return (
@@ -538,7 +586,7 @@ function SocialField({
           {icon}
         </span>
         <input
-          type="url"
+          type={type}
           value={value}
           placeholder={placeholder}
           onChange={(e) => onChange(e.target.value)}

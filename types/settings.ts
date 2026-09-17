@@ -30,6 +30,9 @@ export interface SettingsDTO {
   tagline: string;
   contactEmail: string;
   contactPhone: string;
+  whatsappNumber: string;
+  whatsappMessage: string;
+  whatsappEnabled: boolean;
   logoLight: EmbeddedMediaDTO | null;
   logoDark: EmbeddedMediaDTO | null;
   notificationEmails: string[];
