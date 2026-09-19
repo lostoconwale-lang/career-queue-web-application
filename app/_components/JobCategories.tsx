@@ -16,9 +16,9 @@ export default function JobCategories({
   return (
     <section id="categories" className="mx-auto max-w-6xl px-5 py-24 sm:px-8 sm:py-32">
       <Reveal className="text-center">
-        <p className="text-brand text-sm font-semibold tracking-[0.18em] uppercase">
+        {/* <p className="text-brand text-sm font-semibold tracking-[0.18em] uppercase">
           Popular job categories
-        </p>
+        </p> */}
         <h2 className="font-display text-ink mt-6 text-4xl leading-[1.1] font-semibold tracking-tight sm:text-5xl">
           Where people are <span className="text-brand font-light italic">getting hired</span>
         </h2>

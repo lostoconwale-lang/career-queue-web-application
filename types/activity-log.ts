@@ -16,6 +16,7 @@ export const ACTIVITY_LOG_TYPES = [
   "how-it-works",
   "popular-categories",
   "media",
+  "cache",
 ] as const;
 export type ActivityLogType = (typeof ACTIVITY_LOG_TYPES)[number];
 

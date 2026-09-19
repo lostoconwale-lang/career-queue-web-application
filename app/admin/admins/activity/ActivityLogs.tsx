@@ -36,6 +36,7 @@ const TYPE_LABELS: Record<ActivityLogType, string> = {
   "how-it-works": "How it works",
   "popular-categories": "Popular categories",
   media: "Media",
+  cache: "Cache",
 };
 
 const TYPE_OPTIONS = [

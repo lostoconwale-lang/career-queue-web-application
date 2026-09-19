@@ -28,6 +28,7 @@ import {
   Pin,
   QuestionMark,
   Quote,
+  Refresh,
   ShieldCheck,
   Sparkle,
   Tag,
@@ -71,6 +72,7 @@ const NAV: NavEntry[] = [
     ],
   },
   { label: "Settings", href: "/admin/settings", icon: Cog },
+  { label: "Cache", href: "/admin/cache", icon: Refresh },
 ];
 
 export function AdminShell({ name, children }: { name: string; children: ReactNode }) {

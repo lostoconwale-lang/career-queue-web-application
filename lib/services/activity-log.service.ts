@@ -453,6 +453,10 @@ export function logMediaDeleted(actor: ActivityActor, media: MediaDTO): Promise<
   return write("media", "delete", actor, `Deleted "${media.originalName}" from the media library`);
 }
 
+export function logCacheCleared(actor: ActivityActor): Promise<void> {
+  return write("cache", "delete", actor, "Cleared the public page cache");
+}
+
 export function toActivityLogDTO(log: ActivityLogHydrated): ActivityLogDTO {
   return {
     id: log._id.toString(),

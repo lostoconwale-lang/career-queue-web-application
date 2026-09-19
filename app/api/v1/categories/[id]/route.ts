@@ -10,6 +10,7 @@ import {
   getCategoryById,
   updateCategory,
 } from "@/lib/services/category.service";
+import { revalidatePublicPopularCategories } from "@/lib/services/public-popular-categories.service";
 import {
   activityActor,
   logCategoryDeleted,
@@ -39,6 +40,9 @@ export const PUT = withRoute<Params>(async (req, { params }) => {
   requireAdmin(ctx);
   const patch = await parseJsonBody(req, updateCategoryBodySchema);
   const category = await updateCategory(parseId(params), patch);
+  // A featured category's name, icon or active state may have just changed —
+  // clear the home page's cached copy rather than wait for it to expire.
+  revalidatePublicPopularCategories();
   await logCategoryUpdated(await activityActor(ctx.id), category, patch);
   return jsonOk(category);
 });
@@ -48,6 +52,7 @@ export const DELETE = withRoute<Params>(async (req, { params }) => {
   const ctx = await requireAuth(req);
   requireAdmin(ctx);
   const category = await deleteCategory(parseId(params));
+  revalidatePublicPopularCategories();
   await logCategoryDeleted(await activityActor(ctx.id), category);
   return jsonNoContent();
 });
