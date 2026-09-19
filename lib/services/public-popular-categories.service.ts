@@ -3,6 +3,7 @@ import { revalidateTag, unstable_cache } from "next/cache";
 import type { Types } from "mongoose";
 
 import { connectToDatabase } from "@/lib/db/mongoose";
+import { mediaUrl } from "@/lib/media";
 import { CACHE_TAGS } from "@/lib/cache/tags";
 import { Category } from "@/lib/models/category.model";
 import { Job } from "@/lib/models/job.model";
@@ -25,10 +26,10 @@ async function queryPublicPopularCategories(): Promise<PublicPopularCategoryDTO[
     _id: { $in: categoryIds },
     isActive: true,
     isDeleted: false,
-  }).select("name");
+  }).select("name icon");
   if (categories.length === 0) return [];
 
-  const nameById = new Map(categories.map((c) => [c._id.toString(), c.name]));
+  const byId = new Map(categories.map((c) => [c._id.toString(), c]));
 
   const counts = await Job.aggregate<{ _id: Types.ObjectId; count: number }>([
     { $match: { isActive: true, isDeleted: false } },
@@ -43,8 +44,14 @@ async function queryPublicPopularCategories(): Promise<PublicPopularCategoryDTO[
   return categoryIds
     .map((id) => {
       const key = id.toString();
-      const name = nameById.get(key);
-      return name ? { id: key, name, openRoles: countById.get(key) ?? 0 } : null;
+      const c = byId.get(key);
+      if (!c) return null;
+      return {
+        id: key,
+        name: c.name,
+        iconUrl: c.icon ? mediaUrl(c.icon.key) : null,
+        openRoles: countById.get(key) ?? 0,
+      };
     })
     .filter((c): c is PublicPopularCategoryDTO => c !== null);
 }

@@ -2,6 +2,7 @@ import "server-only";
 import { Types } from "mongoose";
 
 import { BadRequestError } from "@/lib/api/errors";
+import { mediaUrl } from "@/lib/media";
 import { Category } from "@/lib/models/category.model";
 import {
   PopularCategories,
@@ -9,7 +10,7 @@ import {
   type PopularCategoriesHydrated,
 } from "@/lib/models/popular-categories.model";
 import type { UpdatePopularCategoriesBody } from "@/lib/validators/popular-categories.validator";
-import type { PopularCategoriesDTO } from "@/types/popular-categories";
+import type { PopularCategoriesDTO, PopularCategoryRef } from "@/types/popular-categories";
 
 // Load the singleton, creating it on first access.
 async function loadOrCreate(): Promise<PopularCategoriesHydrated> {
@@ -26,18 +27,24 @@ async function loadOrCreate(): Promise<PopularCategoriesHydrated> {
 async function toDTO(doc: PopularCategoriesHydrated): Promise<PopularCategoriesDTO> {
   if (doc.categoryIds.length === 0) return { categories: [], updatedAt: doc.updatedAt.toISOString() };
 
-  const categories = await Category.find({ _id: { $in: doc.categoryIds }, isDeleted: false }).select(
-    "name",
-  );
-  const nameById = new Map(categories.map((c) => [c._id.toString(), c.name]));
+  const categories = await Category.find({
+    _id: { $in: doc.categoryIds },
+    isDeleted: false,
+  }).select("name icon");
+  const byId = new Map(categories.map((c) => [c._id.toString(), c]));
 
   // Preserve the admin's chosen order; silently drop any id that no longer resolves.
   const resolved = doc.categoryIds
     .map((id) => {
-      const name = nameById.get(id.toString());
-      return name ? { id: id.toString(), name } : null;
+      const c = byId.get(id.toString());
+      if (!c) return null;
+      return {
+        id: id.toString(),
+        name: c.name,
+        icon: c.icon ? { id: c.icon._id.toString(), key: c.icon.key, url: mediaUrl(c.icon.key) } : null,
+      };
     })
-    .filter((c): c is { id: string; name: string } => c !== null);
+    .filter((c): c is PopularCategoryRef => c !== null);
 
   return { categories: resolved, updatedAt: doc.updatedAt.toISOString() };
 }

@@ -3,7 +3,7 @@
 import Link from "next/link";
 
 import type { PublicPopularCategoryDTO } from "@/types/public-popular-categories";
-import { Arrow } from "./Icons";
+import { Arrow, Tag } from "./Icons";
 import Reveal from "./Reveal";
 
 export default function JobCategories({
@@ -31,12 +31,26 @@ export default function JobCategories({
               href={`/jobs?categories=${category.id}`}
               className="group rounded-card border-line bg-surface shadow-soft hover:border-brand/30 hover:shadow-lift flex h-full items-center justify-between gap-3 border p-6 transition-all duration-300 hover:-translate-y-1"
             >
-              <span>
-                <span className="font-display text-ink block text-xl leading-snug font-semibold">
-                  {category.name}
-                </span>
-                <span className="text-muted mt-1 block text-sm">
-                  {category.openRoles.toLocaleString()} open roles
+              <span className="flex min-w-0 items-center gap-3.5">
+                {category.iconUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={category.iconUrl}
+                    alt=""
+                    className="border-line bg-cream h-11 w-11 shrink-0 rounded-xl border object-contain p-1.5"
+                  />
+                ) : (
+                  <span className="border-line bg-cream text-muted/50 grid h-11 w-11 shrink-0 place-items-center rounded-xl border">
+                    <Tag className="h-4.5 w-4.5" />
+                  </span>
+                )}
+                <span className="min-w-0">
+                  <span className="font-display text-ink block truncate text-xl leading-snug font-semibold">
+                    {category.name}
+                  </span>
+                  <span className="text-muted mt-1 block text-sm">
+                    {category.openRoles.toLocaleString()} open roles
+                  </span>
                 </span>
               </span>
               <span className="bg-brand-soft text-brand grid h-9 w-9 shrink-0 place-items-center rounded-full transition-transform duration-300 group-hover:translate-x-0.5">

@@ -2,5 +2,6 @@
 export interface PublicPopularCategoryDTO {
   id: string;
   name: string;
+  iconUrl: string | null;
   openRoles: number;
 }

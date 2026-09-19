@@ -9,7 +9,11 @@ import { CategoryPicker } from "@/app/admin/_components/CategoryPicker";
 import { redirectOnDenied } from "@/lib/auth-redirect";
 import type { ApiResponse } from "@/types/api";
 import type { CategoryDTO } from "@/types/category";
-import { POPULAR_CATEGORIES_LIMIT, type PopularCategoriesDTO } from "@/types/popular-categories";
+import {
+  POPULAR_CATEGORIES_LIMIT,
+  type PopularCategoriesDTO,
+  type PopularCategoryRef,
+} from "@/types/popular-categories";
 
 const PREVIEW_BASE_WIDTH = 1440;
 
@@ -17,7 +21,7 @@ export function PopularCategoriesForm() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
+  const [categories, setCategories] = useState<PopularCategoryRef[]>([]);
   const [picking, setPicking] = useState(false);
 
   const [formError, setFormError] = useState<string | null>(null);
@@ -50,7 +54,10 @@ export function PopularCategoriesForm() {
   }, []);
 
   function addCategory(category: CategoryDTO) {
-    setCategories((prev) => [...prev, { id: category.id, name: category.name }]);
+    setCategories((prev) => [
+      ...prev,
+      { id: category.id, name: category.name, icon: category.icon },
+    ]);
     setPicking(false);
   }
 
@@ -72,7 +79,12 @@ export function PopularCategoriesForm() {
     });
   }
 
-  const previewCategories = categories.map((c) => ({ id: c.id, name: c.name, openRoles: 0 }));
+  const previewCategories = categories.map((c) => ({
+    id: c.id,
+    name: c.name,
+    iconUrl: c.icon?.url ?? null,
+    openRoles: 0,
+  }));
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -162,9 +174,18 @@ export function PopularCategoriesForm() {
                     key={category.id}
                     className="border-line flex items-center gap-3 rounded-2xl border p-3"
                   >
-                    <span className="border-line bg-cream text-muted grid h-9 w-9 shrink-0 place-items-center rounded-lg border">
-                      <Tag className="h-4 w-4" />
-                    </span>
+                    {category.icon ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={category.icon.url}
+                        alt=""
+                        className="border-line bg-cream h-9 w-9 shrink-0 rounded-lg border object-contain p-0.5"
+                      />
+                    ) : (
+                      <span className="border-line bg-cream text-muted grid h-9 w-9 shrink-0 place-items-center rounded-lg border">
+                        <Tag className="h-4 w-4" />
+                      </span>
+                    )}
                     <p className="text-ink min-w-0 flex-1 truncate text-sm font-medium">
                       {category.name}
                     </p>
@@ -253,7 +274,7 @@ export function PopularCategoriesForm() {
 function PopularCategoriesPreview({
   categories,
 }: {
-  categories: { id: string; name: string; openRoles: number }[];
+  categories: { id: string; name: string; iconUrl: string | null; openRoles: number }[];
 }) {
   const outerRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
