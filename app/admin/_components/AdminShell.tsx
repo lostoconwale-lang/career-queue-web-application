@@ -20,6 +20,7 @@ import {
   FileText,
   Gauge,
   Grid,
+  ListView,
   LogOut,
   Mail,
   Menu,
@@ -51,7 +52,11 @@ const NAV: NavEntry[] = [
   {
     label: "Manage content",
     icon: Grid,
-    children: [{ label: "Hero section", href: "/admin/hero", icon: Sparkle }],
+    children: [
+      { label: "Hero section", href: "/admin/hero", icon: Sparkle },
+      { label: "How it works", href: "/admin/how-it-works", icon: ListView },
+      { label: "Popular categories", href: "/admin/popular-categories", icon: Tag },
+    ],
   },
   { label: "Testimonials", href: "/admin/testimonials", icon: Quote },
   { label: "FAQs", href: "/admin/faqs", icon: QuestionMark },

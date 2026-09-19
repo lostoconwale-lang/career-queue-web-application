@@ -7,40 +7,6 @@ export type JobCard = {
   href: string | null;
 };
 
-export type JobCategory = { _id: string; name: string; openRoles: number };
-
-export const jobCategories: JobCategory[] = [
-  { _id: "6710b1c2d3e4f5a600000001", name: "Engineering", openRoles: 3120 },
-  { _id: "6710b1c2d3e4f5a600000002", name: "Design", openRoles: 840 },
-  { _id: "6710b1c2d3e4f5a600000003", name: "Product", openRoles: 610 },
-  { _id: "6710b1c2d3e4f5a600000004", name: "Data & Analytics", openRoles: 970 },
-  { _id: "6710b1c2d3e4f5a600000005", name: "Marketing", openRoles: 1180 },
-  { _id: "6710b1c2d3e4f5a600000006", name: "Sales", openRoles: 1450 },
-  { _id: "6710b1c2d3e4f5a600000007", name: "Operations", openRoles: 520 },
-  { _id: "6710b1c2d3e4f5a600000008", name: "Customer Success", openRoles: 430 },
-];
-
-export const steps = [
-  {
-    word: "Search",
-    image: "/images/how-it-works-1.png",
-    title: "Tell us what you're looking for",
-    body: "Role, salary floor, how remote you want to be. Two minutes, no résumé upload required.",
-  },
-  {
-    word: "Match",
-    image: "/images/how-it-works-2.png",
-    title: "Get matched to relevant roles",
-    body: "We rank every open job against what you asked for and show you why each one made the list.",
-  },
-  {
-    word: "Apply",
-    image: "/images/how-it-works-3.png",
-    title: "Apply in one click",
-    body: "Your profile travels with you. No retyping the same work history into six different forms.",
-  },
-];
-
 export const features = [
   {
     eyebrow: "Smart matching",

@@ -1,10 +1,18 @@
+"use client";
+
 import Link from "next/link";
 
-import { jobCategories } from "../_data";
+import type { PublicPopularCategoryDTO } from "@/types/public-popular-categories";
 import { Arrow } from "./Icons";
 import Reveal from "./Reveal";
 
-export default function JobCategories() {
+export default function JobCategories({
+  categories,
+}: {
+  categories: PublicPopularCategoryDTO[];
+}) {
+  if (categories.length === 0) return null;
+
   return (
     <section id="categories" className="mx-auto max-w-6xl px-5 py-24 sm:px-8 sm:py-32">
       <Reveal className="text-center">
@@ -17,10 +25,10 @@ export default function JobCategories() {
       </Reveal>
 
       <ul className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {jobCategories.map((category, index) => (
-          <Reveal key={category._id} delay={index * 0.05}>
+        {categories.map((category, index) => (
+          <Reveal key={category.id} delay={index * 0.05}>
             <Link
-              href={`/jobs?categories=${category._id}`}
+              href={`/jobs?categories=${category.id}`}
               className="group rounded-card border-line bg-surface shadow-soft hover:border-brand/30 hover:shadow-lift flex h-full items-center justify-between gap-3 border p-6 transition-all duration-300 hover:-translate-y-1"
             >
               <span>

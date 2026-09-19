@@ -11,4 +11,8 @@ export const CACHE_TAGS = {
   publicSettings: "public-settings",
   // The home page hero content.
   publicHero: "public-hero",
+  // The home page "How it works" content.
+  publicHowItWorks: "public-how-it-works",
+  // The home page "Popular job categories" content.
+  publicPopularCategories: "public-popular-categories",
 } as const;

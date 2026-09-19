@@ -426,6 +426,19 @@ export function logHeroUpdated(actor: ActivityActor): Promise<void> {
   return write("hero", "update", actor, "Updated the home page hero section");
 }
 
+export function logHowItWorksUpdated(actor: ActivityActor): Promise<void> {
+  return write("how-it-works", "update", actor, "Updated the home page \"How it works\" section");
+}
+
+export function logPopularCategoriesUpdated(actor: ActivityActor): Promise<void> {
+  return write(
+    "popular-categories",
+    "update",
+    actor,
+    "Updated the featured categories on the home page",
+  );
+}
+
 export function logMediaUploaded(actor: ActivityActor, count: number): Promise<void> {
   const label = count === 1 ? "file" : "files";
   return write("media", "create", actor, `Uploaded ${count} ${label} to the media library`);
