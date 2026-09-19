@@ -1,31 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
-
-import type { ApiResponse } from "@/types/api";
-import type { PublicTestimonialDTO } from "@/types/public-testimonial";
+import type { PublicTestimonialsDTO } from "@/types/public-testimonial";
 import Reveal from "./Reveal";
 
-export default function Testimonials() {
-  const [testimonials, setTestimonials] = useState<PublicTestimonialDTO[]>([]);
-
-  // Active testimonials — cached + tag-revalidated on the server
-  // (/api/v1/public/testimonials), refreshed whenever an admin edits the list.
-  useEffect(() => {
-    let alive = true;
-    fetch("/api/v1/public/testimonials")
-      .then((res) => res.json() as Promise<ApiResponse<PublicTestimonialDTO[]>>)
-      .then((json) => {
-        if (alive && json.success) setTestimonials(json.data);
-      })
-      .catch(() => {
-        // A failed fetch just leaves the section empty — nothing to surface.
-      });
-    return () => {
-      alive = false;
-    };
-  }, []);
-
+export default function Testimonials({ content }: { content: PublicTestimonialsDTO }) {
+  const testimonials = content.testimonials;
   if (testimonials.length === 0) return null;
 
   // The marquee loops seamlessly by rendering the track twice and translating
@@ -42,11 +21,8 @@ export default function Testimonials() {
   return (
     <section className="overflow-hidden py-24 sm:py-32">
       <Reveal className="mx-auto max-w-6xl px-5 text-center sm:px-8">
-        <p className="text-brand text-sm font-semibold tracking-[0.18em] uppercase">
-          People who moved
-        </p>
-        <h2 className="font-display text-ink mt-6 text-4xl leading-[1.1] font-semibold tracking-tight sm:text-5xl">
-          Offers, not <span className="text-brand font-light italic">open tabs</span>
+        <h2 className="font-display text-ink text-4xl leading-[1.1] font-semibold tracking-tight sm:text-5xl">
+          {content.heading}
         </h2>
       </Reveal>
 

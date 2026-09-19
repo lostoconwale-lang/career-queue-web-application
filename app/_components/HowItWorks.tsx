@@ -8,10 +8,7 @@ export default function HowItWorks({ content }: { content: PublicHowItWorksDTO }
   return (
     <section id="how-it-works" className="mx-auto max-w-6xl px-5 py-24 sm:px-8 sm:py-32">
       <Reveal className="text-center">
-        <p className="text-brand text-sm font-semibold tracking-[0.18em] uppercase">
-          {content.eyebrow}
-        </p>
-        <h2 className="font-display text-ink mt-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-4xl leading-[1.1] font-semibold tracking-tight sm:gap-x-7 sm:text-6xl">
+        <h2 className="font-display text-ink flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-4xl leading-[1.1] font-semibold tracking-tight sm:gap-x-7 sm:text-6xl">
           {content.steps.map((step, index) => (
             <span key={index} className="flex items-center gap-x-4 sm:gap-x-7">
               {index > 0 ? (

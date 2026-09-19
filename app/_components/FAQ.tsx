@@ -40,8 +40,7 @@ export default function FAQ() {
       <div className="grid gap-12 lg:grid-cols-[0.85fr_1.15fr] lg:items-center lg:gap-16">
         {/* Fills the desktop whitespace beside the (narrow) accordion column. */}
         <div className="text-center lg:text-left">
-          <p className="text-brand text-sm font-semibold tracking-[0.18em] uppercase">FAQ</p>
-          <h2 className="font-display text-ink mt-6 text-4xl leading-[1.1] font-semibold tracking-tight sm:text-5xl">
+          <h2 className="font-display text-ink text-4xl leading-[1.1] font-semibold tracking-tight sm:text-5xl">
             The usual <span className="text-brand font-light italic">questions</span>
           </h2>
           <p className="text-muted mx-auto mt-5 hidden max-w-sm text-lg leading-relaxed lg:mx-0 lg:block">

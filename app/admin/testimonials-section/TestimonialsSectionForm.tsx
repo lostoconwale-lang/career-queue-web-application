@@ -4,26 +4,26 @@ import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 
 import { AuthField } from "@/app/_components/AuthField";
-import JobCategories from "@/app/_components/JobCategories";
-import { Chevron, Tag, Trash } from "@/app/_components/Icons";
-import { CategoryPicker } from "@/app/admin/_components/CategoryPicker";
+import Testimonials from "@/app/_components/Testimonials";
+import { Chevron, Quote, Trash } from "@/app/_components/Icons";
+import { TestimonialPicker } from "@/app/admin/_components/TestimonialPicker";
 import { redirectOnDenied } from "@/lib/auth-redirect";
 import type { ApiResponse } from "@/types/api";
-import type { CategoryDTO } from "@/types/category";
+import type { TestimonialDTO } from "@/types/testimonial";
 import {
-  POPULAR_CATEGORIES_LIMIT,
-  type PopularCategoriesDTO,
-  type PopularCategoryRef,
-} from "@/types/popular-categories";
+  TESTIMONIALS_SECTION_LIMIT,
+  type TestimonialRef,
+  type TestimonialsSectionDTO,
+} from "@/types/testimonials-section";
 
 const PREVIEW_BASE_WIDTH = 1440;
 
-export function PopularCategoriesForm() {
+export function TestimonialsSectionForm() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  const [headline, setHeadline] = useState("");
-  const [categories, setCategories] = useState<PopularCategoryRef[]>([]);
+  const [heading, setHeading] = useState("");
+  const [testimonials, setTestimonials] = useState<TestimonialRef[]>([]);
   const [picking, setPicking] = useState(false);
 
   const [submitted, setSubmitted] = useState(false);
@@ -33,9 +33,11 @@ export function PopularCategoriesForm() {
 
   useEffect(() => {
     let alive = true;
-    fetch("/api/v1/popular-categories", { cache: "no-store" })
+    fetch("/api/v1/testimonials-section", { cache: "no-store" })
       .then((res) =>
-        redirectOnDenied(res) ? null : (res.json() as Promise<ApiResponse<PopularCategoriesDTO>>),
+        redirectOnDenied(res)
+          ? null
+          : (res.json() as Promise<ApiResponse<TestimonialsSectionDTO>>),
       )
       .then((json) => {
         if (!alive || !json) return;
@@ -43,11 +45,11 @@ export function PopularCategoriesForm() {
           setLoadError(json.error.message);
           return;
         }
-        setHeadline(json.data.headline);
-        setCategories(json.data.categories);
+        setHeading(json.data.heading);
+        setTestimonials(json.data.testimonials);
       })
       .catch(() => {
-        if (alive) setLoadError("Could not load the popular categories.");
+        if (alive) setLoadError("Could not load the testimonials section.");
       })
       .finally(() => {
         if (alive) setLoading(false);
@@ -57,20 +59,26 @@ export function PopularCategoriesForm() {
     };
   }, []);
 
-  function addCategory(category: CategoryDTO) {
-    setCategories((prev) => [
+  function addTestimonial(testimonial: TestimonialDTO) {
+    setTestimonials((prev) => [
       ...prev,
-      { id: category.id, name: category.name, icon: category.icon },
+      {
+        id: testimonial.id,
+        authorName: testimonial.authorName,
+        role: testimonial.role,
+        quote: testimonial.quote,
+        image: testimonial.image,
+      },
     ]);
     setPicking(false);
   }
 
-  function removeCategory(id: string) {
-    setCategories((prev) => prev.filter((c) => c.id !== id));
+  function removeTestimonial(id: string) {
+    setTestimonials((prev) => prev.filter((t) => t.id !== id));
   }
 
-  function moveCategory(index: number, direction: -1 | 1) {
-    setCategories((prev) => {
+  function moveTestimonial(index: number, direction: -1 | 1) {
+    setTestimonials((prev) => {
       const target = index + direction;
       if (target < 0 || target >= prev.length) return prev;
       const a = prev[index];
@@ -83,15 +91,16 @@ export function PopularCategoriesForm() {
     });
   }
 
-  const headlineError = submitted && headline.trim().length < 1 ? "Enter the headline" : undefined;
+  const headingError = submitted && heading.trim().length < 1 ? "Enter the heading" : undefined;
 
   const previewContent = {
-    headline,
-    categories: categories.map((c) => ({
-      id: c.id,
-      name: c.name,
-      iconUrl: c.icon?.url ?? null,
-      openRoles: 0,
+    heading,
+    testimonials: testimonials.map((t) => ({
+      id: t.id,
+      authorName: t.authorName,
+      role: t.role,
+      quote: t.quote,
+      imageUrl: t.image.url,
     })),
   };
 
@@ -101,26 +110,26 @@ export function PopularCategoriesForm() {
     setSaved(false);
     setSubmitted(true);
 
-    if (headline.trim().length < 1) return;
+    if (heading.trim().length < 1) return;
 
     setSaving(true);
     try {
-      const res = await fetch("/api/v1/popular-categories", {
+      const res = await fetch("/api/v1/testimonials-section", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          headline: headline.trim(),
-          categoryIds: categories.map((c) => c.id),
+          heading: heading.trim(),
+          testimonialIds: testimonials.map((t) => t.id),
         }),
       });
       if (redirectOnDenied(res)) return;
-      const json = (await res.json()) as ApiResponse<PopularCategoriesDTO>;
+      const json = (await res.json()) as ApiResponse<TestimonialsSectionDTO>;
       if (!json.success) {
-        setFormError(json.error.message || "Could not save the popular categories.");
+        setFormError(json.error.message || "Could not save the testimonials section.");
         return;
       }
-      setHeadline(json.data.headline);
-      setCategories(json.data.categories);
+      setHeading(json.data.heading);
+      setTestimonials(json.data.testimonials);
       setSaved(true);
     } catch {
       setFormError("Something went wrong. Please try again.");
@@ -150,11 +159,11 @@ export function PopularCategoriesForm() {
   return (
     <div className="px-5 py-10 sm:px-8">
       <h1 className="font-display text-ink mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
-        Popular categories
+        Testimonials section
       </h1>
       <p className="text-muted mt-2 text-sm">
-        Choose which categories show in the &quot;Popular job categories&quot; section on the home
-        page, and in what order.
+        Choose which testimonials show on the home page, and in what order. Add or edit the
+        testimonials themselves under &quot;Testimonials&quot;.
       </p>
 
       {formError ? (
@@ -164,7 +173,7 @@ export function PopularCategoriesForm() {
       ) : null}
       {saved ? (
         <p className="border-brand/30 bg-brand-soft text-brand mt-5 rounded-2xl border px-4 py-3 text-sm">
-          Popular categories saved.
+          Testimonials section saved.
         </p>
       ) : null}
 
@@ -172,13 +181,13 @@ export function PopularCategoriesForm() {
         <div>
           <section className="bg-surface border-line shadow-soft rounded-2xl border p-6 sm:p-7">
             <AuthField
-              label="Headline"
-              name="headline"
-              hint="The heading above the featured categories."
+              label="Heading"
+              name="heading"
+              hint="The heading above the testimonials."
               maxLength={100}
-              value={headline}
-              error={headlineError}
-              onChange={(e) => setHeadline(e.target.value)}
+              value={heading}
+              error={headingError}
+              onChange={(e) => setHeading(e.target.value)}
             />
           </section>
 
@@ -186,42 +195,38 @@ export function PopularCategoriesForm() {
             <div className="flex items-center justify-between gap-3">
               <div>
                 <h2 className="font-display text-ink text-lg font-semibold">
-                  Featured categories
+                  Featured testimonials
                 </h2>
                 <p className="text-muted mt-0.5 text-sm">
-                  Up to {POPULAR_CATEGORIES_LIMIT}. Open-role counts update automatically — you
-                  only choose which categories appear and in what order.
+                  Up to {TESTIMONIALS_SECTION_LIMIT}, in this order.
                 </p>
               </div>
             </div>
 
-            {categories.length > 0 ? (
+            {testimonials.length > 0 ? (
               <ul className="mt-5 grid gap-2">
-                {categories.map((category, index) => (
+                {testimonials.map((testimonial, index) => (
                   <li
-                    key={category.id}
+                    key={testimonial.id}
                     className="border-line flex items-center gap-3 rounded-2xl border p-3"
                   >
-                    {category.icon ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={category.icon.url}
-                        alt=""
-                        className="border-line bg-cream h-9 w-9 shrink-0 rounded-lg border object-contain p-0.5"
-                      />
-                    ) : (
-                      <span className="border-line bg-cream text-muted grid h-9 w-9 shrink-0 place-items-center rounded-lg border">
-                        <Tag className="h-4 w-4" />
-                      </span>
-                    )}
-                    <p className="text-ink min-w-0 flex-1 truncate text-sm font-medium">
-                      {category.name}
-                    </p>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={testimonial.image.url}
+                      alt=""
+                      className="border-line bg-cream h-9 w-9 shrink-0 rounded-full border object-cover"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-ink truncate text-sm font-medium">
+                        {testimonial.authorName}
+                      </p>
+                      <p className="text-muted truncate text-xs">{testimonial.role}</p>
+                    </div>
                     <button
                       type="button"
-                      onClick={() => moveCategory(index, -1)}
+                      onClick={() => moveTestimonial(index, -1)}
                       disabled={index === 0}
-                      aria-label={`Move ${category.name} up`}
+                      aria-label={`Move ${testimonial.authorName} up`}
                       title="Move up"
                       className="text-muted hover:bg-surface hover:text-ink rounded-lg p-1.5 transition-colors disabled:opacity-30"
                     >
@@ -229,9 +234,9 @@ export function PopularCategoriesForm() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => moveCategory(index, 1)}
-                      disabled={index === categories.length - 1}
-                      aria-label={`Move ${category.name} down`}
+                      onClick={() => moveTestimonial(index, 1)}
+                      disabled={index === testimonials.length - 1}
+                      aria-label={`Move ${testimonial.authorName} down`}
                       title="Move down"
                       className="text-muted hover:bg-surface hover:text-ink rounded-lg p-1.5 transition-colors disabled:opacity-30"
                     >
@@ -239,8 +244,8 @@ export function PopularCategoriesForm() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => removeCategory(category.id)}
-                      aria-label={`Remove ${category.name}`}
+                      onClick={() => removeTestimonial(testimonial.id)}
+                      aria-label={`Remove ${testimonial.authorName}`}
                       title="Remove"
                       className="text-coral hover:bg-coral/10 rounded-lg p-1.5 transition-colors"
                     >
@@ -250,20 +255,20 @@ export function PopularCategoriesForm() {
                 ))}
               </ul>
             ) : (
-              <p className="text-muted mt-5 text-xs">No categories featured yet.</p>
+              <p className="text-muted mt-5 text-xs">No testimonials featured yet.</p>
             )}
 
-            {categories.length < POPULAR_CATEGORIES_LIMIT ? (
+            {testimonials.length < TESTIMONIALS_SECTION_LIMIT ? (
               <button
                 type="button"
                 onClick={() => setPicking(true)}
                 className="border-line text-ink hover:bg-cream mt-4 inline-flex items-center gap-1.5 rounded-2xl border px-4 py-2.5 text-sm font-semibold transition-colors"
               >
-                <Tag className="h-4 w-4" /> Add a category
+                <Quote className="h-4 w-4" /> Add a testimonial
               </button>
             ) : (
               <p className="text-muted mt-4 text-xs">
-                You&apos;ve reached the limit of {POPULAR_CATEGORIES_LIMIT} categories.
+                You&apos;ve reached the limit of {TESTIMONIALS_SECTION_LIMIT} testimonials.
               </p>
             )}
           </section>
@@ -274,37 +279,40 @@ export function PopularCategoriesForm() {
               disabled={saving}
               className="bg-brand text-surface shadow-soft rounded-full px-7 py-2.5 text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-60"
             >
-              {saving ? "Saving…" : "Save popular categories"}
+              {saving ? "Saving…" : "Save testimonials section"}
             </button>
           </div>
         </div>
 
         <div className="lg:sticky lg:top-20 lg:self-start">
           <p className="text-muted text-sm font-medium">Preview</p>
-          <p className="text-muted mt-0.5 text-xs">
-            Open-role counts aren&apos;t shown here — they&apos;re computed live on the home page.
-          </p>
-          <PopularCategoriesPreview content={previewContent} />
+          <TestimonialsSectionPreview content={previewContent} />
         </div>
       </form>
 
       {picking ? (
-        <CategoryPicker
-          excludeIds={categories.map((c) => c.id)}
+        <TestimonialPicker
+          excludeIds={testimonials.map((t) => t.id)}
           onClose={() => setPicking(false)}
-          onPick={addCategory}
+          onPick={addTestimonial}
         />
       ) : null}
     </div>
   );
 }
 
-function PopularCategoriesPreview({
+function TestimonialsSectionPreview({
   content,
 }: {
   content: {
-    headline: string;
-    categories: { id: string; name: string; iconUrl: string | null; openRoles: number }[];
+    heading: string;
+    testimonials: {
+      id: string;
+      authorName: string;
+      role: string;
+      quote: string;
+      imageUrl: string;
+    }[];
   };
 }) {
   const outerRef = useRef<HTMLDivElement>(null);
@@ -330,10 +338,10 @@ function PopularCategoriesPreview({
     return () => observer.disconnect();
   }, [content]);
 
-  if (content.categories.length === 0) {
+  if (content.testimonials.length === 0) {
     return (
       <div className="border-line bg-cream text-muted mt-2 grid h-40 place-items-center rounded-2xl border text-sm">
-        Nothing to preview yet — add a category.
+        Nothing to preview yet — add a testimonial.
       </div>
     );
   }
@@ -349,7 +357,7 @@ function PopularCategoriesPreview({
         className="pointer-events-none"
         style={{ width: PREVIEW_BASE_WIDTH, transform: `scale(${scale})`, transformOrigin: "top left" }}
       >
-        <JobCategories content={content} />
+        <Testimonials content={content} />
       </div>
     </div>
   );

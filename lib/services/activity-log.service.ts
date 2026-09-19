@@ -354,6 +354,10 @@ export function logTestimonialDeleted(
   );
 }
 
+export function logTestimonialsSectionUpdated(actor: ActivityActor): Promise<void> {
+  return write("testimonial", "update", actor, "Updated the testimonials section");
+}
+
 function testimonialChangeMessage(
   testimonial: TestimonialDTO,
   patch: UpdateTestimonialBody,

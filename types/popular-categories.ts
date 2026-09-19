@@ -9,9 +9,10 @@ export interface PopularCategoryRef {
   icon: EmbeddedMediaDTO | null;
 }
 
-// GET/PUT /api/v1/popular-categories — the categories admins picked to
-// feature on the home page, in the order they'll appear.
+// GET/PUT /api/v1/popular-categories — the headline and the categories
+// admins picked to feature on the home page, in the order they'll appear.
 export interface PopularCategoriesDTO {
+  headline: string;
   categories: PopularCategoryRef[];
   updatedAt: string;
 }

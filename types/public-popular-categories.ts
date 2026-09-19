@@ -5,3 +5,9 @@ export interface PublicPopularCategoryDTO {
   iconUrl: string | null;
   openRoles: number;
 }
+
+// The "Popular job categories" content shown to visitors on the home page.
+export interface PublicPopularCategoriesDTO {
+  headline: string;
+  categories: PublicPopularCategoryDTO[];
+}

@@ -7,6 +7,7 @@ export const POPULAR_CATEGORIES_KEY = "global";
 export interface PopularCategoriesDoc {
   _id: Types.ObjectId;
   key: string;
+  headline: string;
   categoryIds: Types.ObjectId[];
   createdAt: Date;
   updatedAt: Date;
@@ -18,6 +19,12 @@ export type PopularCategoriesModel = Model<PopularCategoriesDoc>;
 const popularCategoriesSchema = new Schema<PopularCategoriesDoc, PopularCategoriesModel>(
   {
     key: { type: String, required: true, unique: true, default: POPULAR_CATEGORIES_KEY },
+    headline: {
+      type: String,
+      trim: true,
+      maxlength: 100,
+      default: "Where people are getting hired",
+    },
     categoryIds: { type: [{ type: Schema.Types.ObjectId, ref: "Category" }], default: [] },
   },
   { timestamps: true },

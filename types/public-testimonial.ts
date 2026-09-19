@@ -6,3 +6,9 @@ export interface PublicTestimonialDTO {
   quote: string;
   imageUrl: string;
 }
+
+// GET /api/v1/public/testimonials — the home page testimonials section.
+export interface PublicTestimonialsDTO {
+  heading: string;
+  testimonials: PublicTestimonialDTO[];
+}

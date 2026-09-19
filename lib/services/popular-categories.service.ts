@@ -25,7 +25,9 @@ async function loadOrCreate(): Promise<PopularCategoriesHydrated> {
 }
 
 async function toDTO(doc: PopularCategoriesHydrated): Promise<PopularCategoriesDTO> {
-  if (doc.categoryIds.length === 0) return { categories: [], updatedAt: doc.updatedAt.toISOString() };
+  if (doc.categoryIds.length === 0) {
+    return { headline: doc.headline, categories: [], updatedAt: doc.updatedAt.toISOString() };
+  }
 
   const categories = await Category.find({
     _id: { $in: doc.categoryIds },
@@ -46,7 +48,7 @@ async function toDTO(doc: PopularCategoriesHydrated): Promise<PopularCategoriesD
     })
     .filter((c): c is PopularCategoryRef => c !== null);
 
-  return { categories: resolved, updatedAt: doc.updatedAt.toISOString() };
+  return { headline: doc.headline, categories: resolved, updatedAt: doc.updatedAt.toISOString() };
 }
 
 export async function getPopularCategories(): Promise<PopularCategoriesDTO> {
@@ -68,6 +70,7 @@ export async function updatePopularCategories(
     }
   }
 
+  doc.headline = body.headline;
   doc.categoryIds = body.categoryIds.map((id) => new Types.ObjectId(id));
   await doc.save();
   return toDTO(doc);

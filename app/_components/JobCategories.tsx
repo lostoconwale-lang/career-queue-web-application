@@ -2,30 +2,23 @@
 
 import Link from "next/link";
 
-import type { PublicPopularCategoryDTO } from "@/types/public-popular-categories";
+import type { PublicPopularCategoriesDTO } from "@/types/public-popular-categories";
 import { Arrow, Tag } from "./Icons";
 import Reveal from "./Reveal";
 
-export default function JobCategories({
-  categories,
-}: {
-  categories: PublicPopularCategoryDTO[];
-}) {
-  if (categories.length === 0) return null;
+export default function JobCategories({ content }: { content: PublicPopularCategoriesDTO }) {
+  if (content.categories.length === 0) return null;
 
   return (
     <section id="categories" className="mx-auto max-w-6xl px-5 py-24 sm:px-8 sm:py-32">
       <Reveal className="text-center">
-        {/* <p className="text-brand text-sm font-semibold tracking-[0.18em] uppercase">
-          Popular job categories
-        </p> */}
-        <h2 className="font-display text-ink mt-6 text-4xl leading-[1.1] font-semibold tracking-tight sm:text-5xl">
-          Where people are <span className="text-brand font-light italic">getting hired</span>
+        <h2 className="font-display text-ink text-4xl leading-[1.1] font-semibold tracking-tight sm:text-5xl">
+          {content.headline}
         </h2>
       </Reveal>
 
       <ul className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {categories.map((category, index) => (
+        {content.categories.map((category, index) => (
           <Reveal key={category.id} delay={index * 0.05}>
             <Link
               href={`/jobs?categories=${category.id}`}
