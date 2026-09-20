@@ -77,14 +77,12 @@ export default function Nav({
   const close = () => setMenuOpen(false);
 
   return (
-    <header
-      className={`sticky top-0 z-50 transition-all duration-300 ${
-        scrolled
-          ? "border-line bg-surface/90 border-b backdrop-blur-md"
-          : "border-b border-transparent"
-      }`}
-    >
-      <nav className="mx-auto flex h-18 max-w-6xl items-center gap-6 px-5 py-4 sm:px-8">
+    <header className="sticky top-4 z-50 px-5 sm:px-8">
+      <nav
+        className={`mx-auto flex h-16 max-w-6xl items-center gap-6 rounded-full border px-5 backdrop-blur-md transition-all duration-300 sm:px-6 ${
+          scrolled ? "border-line bg-surface/95 shadow-lift" : "border-line/60 bg-surface/85 shadow-soft"
+        }`}
+      >
         <Link href="/" aria-label="Home" className="cursor-pointer">
           <Logo iconUrl={iconUrl} siteName={siteName} />
         </Link>
@@ -158,7 +156,7 @@ export default function Nav({
               animate="visible"
               exit="hidden"
               transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-              className="border-line bg-surface/95 shadow-lift absolute inset-x-4 top-full z-40 mt-2 origin-top overflow-hidden rounded-3xl border backdrop-blur-md sm:inset-x-8 md:hidden"
+              className="border-line bg-surface/95 shadow-lift absolute inset-x-5 top-full z-40 mt-2 origin-top overflow-hidden rounded-3xl border backdrop-blur-md sm:inset-x-8 md:hidden"
             >
               {visibleLinks.length > 0 ? (
                 <ul className="flex flex-col gap-0.5 p-2">

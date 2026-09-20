@@ -29,14 +29,16 @@ export default function Hero({ content }: { content: PublicHeroDTO }) {
     // background bleed horizontally without trapping the city dropdown, which
     // needs to overflow the section vertically.
     <section id="top" className="relative overflow-x-clip pb-24">
-      <Image
-        src="/images/hero-bg-texture.png"
-        alt=""
-        fill
-        priority
-        sizes="100vw"
-        className="pointer-events-none z-0 object-cover"
-      />
+      <div className="pointer-events-none absolute inset-x-0 -top-16 bottom-0 z-0">
+        <Image
+          src="/images/hero-bg-texture.png"
+          alt=""
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover"
+        />
+      </div>
 
       <div className="pointer-events-none absolute inset-0 mx-auto hidden max-w-[1500px] xl:block">
         {jobCards.slice(0, floatPositions.length).map((job, index) => (
