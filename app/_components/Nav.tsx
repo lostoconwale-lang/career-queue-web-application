@@ -1,18 +1,30 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { Route } from "next";
 import Link from "next/link";
 
 import Logo from "./Logo";
+import type { PublicHeaderLinkDTO } from "@/types/public-header";
 
 export default function Nav({
   iconUrl,
   siteName,
+  links = [],
+  isAuthenticated = false,
 }: {
   iconUrl?: string | null;
   siteName?: string;
+  links?: PublicHeaderLinkDTO[];
+  isAuthenticated?: boolean;
 }) {
   const [scrolled, setScrolled] = useState(false);
+  const visibleLinks = links.filter(
+    (link) =>
+      link.visibility === "all" ||
+      (link.visibility === "auth" && isAuthenticated) ||
+      (link.visibility === "guest" && !isAuthenticated),
+  );
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 16);
@@ -35,14 +47,16 @@ export default function Nav({
         </a>
 
         <ul className="ml-auto hidden items-center gap-1 md:flex">
-          <li>
-            <Link
-              href="/jobs"
-              className="text-muted hover:bg-brand-soft hover:text-ink rounded-full px-4 py-2 text-sm font-medium transition-colors"
-            >
-              Browse jobs
-            </Link>
-          </li>
+          {visibleLinks.map((link) => (
+            <li key={link.href}>
+              <Link
+                href={link.href as Route}
+                className="text-muted hover:bg-brand-soft hover:text-ink rounded-full px-4 py-2 text-sm font-medium transition-colors"
+              >
+                {link.label}
+              </Link>
+            </li>
+          ))}
         </ul>
 
         <div className="ml-auto flex items-center gap-2 md:ml-0">

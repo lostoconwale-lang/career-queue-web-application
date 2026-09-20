@@ -4,11 +4,13 @@ import type { Metadata } from "next";
 
 import Footer from "@/app/_components/Footer";
 import Nav from "@/app/_components/Nav";
-import { Buildings, Clock } from "@/app/_components/Icons";
+import { Buildings, Clock, Pin } from "@/app/_components/Icons";
 import { CompanyLogo } from "@/app/_components/jobs/CompanyLogo";
 import { ApplyButton } from "@/app/jobs/[id]/ApplyButton";
+import { auth } from "@/lib/auth/nextauth";
 import { connectToDatabase } from "@/lib/db/mongoose";
 import { getPublicJobById } from "@/lib/services/public-job.service";
+import { listPublicHeader } from "@/lib/services/public-header.service";
 import { listPublicSettings } from "@/lib/services/public-settings.service";
 import { formatRelativeTime } from "@/lib/date";
 
@@ -24,11 +26,7 @@ const loadJob = cache(async (id: string) => {
   return getPublicJobById(id);
 });
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<Params>;
-}): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {
   const { id } = await params;
   const job = await loadJob(id);
   return { title: job ? `${job.title} — CareerQueue` : "Job not found — CareerQueue" };
@@ -39,7 +37,12 @@ export async function generateMetadata({
 // already runs on the server).
 export default async function JobDetailPage({ params }: { params: Promise<Params> }) {
   const { id } = await params;
-  const [job, { siteName, iconLightUrl }] = await Promise.all([loadJob(id), listPublicSettings()]);
+  const [job, { siteName, iconLightUrl }, headerLinks, session] = await Promise.all([
+    loadJob(id),
+    listPublicSettings(),
+    listPublicHeader(),
+    auth(),
+  ]);
   if (!job) notFound();
 
   const posted = formatRelativeTime(job.createdAt);
@@ -50,17 +53,18 @@ export default async function JobDetailPage({ params }: { params: Promise<Params
 
   return (
     <>
-      <Nav iconUrl={iconLightUrl} siteName={siteName} />
+      <Nav
+        iconUrl={iconLightUrl}
+        siteName={siteName}
+        links={headerLinks}
+        isAuthenticated={Boolean(session?.user)}
+      />
       <main>
         <div className="mx-auto px-5 py-10 sm:px-8 sm:py-14">
-          <div className="mt-6 overflow-hidden rounded-card">
+          <div className="rounded-card mt-6 overflow-hidden">
             {job.coverImage ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={job.coverImage.url}
-                alt=""
-                className="h-48 w-full object-cover sm:h-64"
-              />
+              <img src={job.coverImage.url} alt="" className="h-48 w-full object-cover sm:h-64" />
             ) : null}
 
             <div className="p-6 sm:p-10">
@@ -81,10 +85,18 @@ export default async function JobDetailPage({ params }: { params: Promise<Params
                   <h1 className="font-display text-ink mt-1 text-2xl leading-tight font-semibold tracking-tight sm:text-3xl">
                     {job.title}
                   </h1>
-                  <p className="text-muted mt-2 inline-flex items-center gap-1.5 text-sm">
-                    <Clock className="h-3.5 w-3.5 shrink-0" />
-                    Posted {posted}
-                  </p>
+                  <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+                    {job.city ? (
+                      <p className="text-muted inline-flex items-center gap-1.5 text-sm">
+                        <Pin className="h-3.5 w-3.5 shrink-0" />
+                        {job.city.name}
+                      </p>
+                    ) : null}
+                    <p className="text-muted inline-flex items-center gap-1.5 text-sm">
+                      <Clock className="h-3.5 w-3.5 shrink-0" />
+                      Posted {posted}
+                    </p>
+                  </div>
                 </div>
               </div>
 
@@ -116,9 +128,7 @@ export default async function JobDetailPage({ params }: { params: Promise<Params
                 id="apply"
                 className="border-brand/20 bg-brand-soft mt-10 scroll-mt-24 rounded-2xl border p-6 text-center sm:p-8"
               >
-                <h2 className="font-display text-ink text-xl font-semibold">
-                  Apply for this role
-                </h2>
+                <h2 className="font-display text-ink text-xl font-semibold">Apply for this role</h2>
                 <p className="text-muted mx-auto mt-2 max-w-md text-sm leading-relaxed">
                   Ready to apply for {job.title}
                   {job.company ? ` at ${job.company.name}` : ""}? You&apos;ll confirm before

@@ -9,6 +9,7 @@ import { AuthField } from "@/app/_components/AuthField";
 import { Check } from "@/app/_components/Icons";
 import { RichTextEditor } from "@/app/_components/RichTextEditor";
 import { ChipMultiSelect } from "@/app/admin/_components/ChipMultiSelect";
+import { CitySelectField, type CityRef } from "@/app/admin/_components/CitySelectField";
 import { CompanySelectField, type CompanyRef } from "@/app/admin/_components/CompanySelectField";
 import { ImageField } from "@/app/admin/_components/ImageField";
 import { redirectOnDenied } from "@/lib/auth-redirect";
@@ -36,6 +37,7 @@ const FIELD_TAB: Record<string, TabKey> = {
   categories: "details",
   jobTypes: "details",
   company: "details",
+  city: "details",
   coverImage: "details",
   thumbnail: "details",
   description: "description",
@@ -57,6 +59,7 @@ export function JobForm({ jobId }: { jobId?: string }) {
   const [categories, setCategories] = useState<JobCategoryRef[]>([]);
   const [jobTypes, setJobTypes] = useState<JobTypeRef[]>([]);
   const [company, setCompany] = useState<CompanyRef | null>(null);
+  const [city, setCity] = useState<CityRef | null>(null);
   const [coverImage, setCoverImage] = useState<EmbeddedMediaDTO | null>(null);
   const [thumbnail, setThumbnail] = useState<EmbeddedMediaDTO | null>(null);
   const [metaTitle, setMetaTitle] = useState("");
@@ -112,6 +115,7 @@ export function JobForm({ jobId }: { jobId?: string }) {
         setCompany(
           j.company ? { id: j.company.id, name: j.company.name, logoUrl: j.company.logo?.url ?? null } : null,
         );
+        setCity(j.city ? { id: j.city.id, name: j.city.name } : null);
         setCoverImage(j.coverImage);
         setThumbnail(j.thumbnail);
         setMetaTitle(j.seo.metaTitle);
@@ -155,6 +159,8 @@ export function JobForm({ jobId }: { jobId?: string }) {
 
     if (!company) e.company = "Choose a company";
 
+    if (!city) e.city = "Choose a city";
+
     if (!coverImage) e.coverImage = "Choose a cover image";
     if (!thumbnail) e.thumbnail = "Choose a thumbnail";
 
@@ -180,6 +186,7 @@ export function JobForm({ jobId }: { jobId?: string }) {
     categories.length,
     jobTypes.length,
     company,
+    city,
     coverImage,
     thumbnail,
     metaTitleLen,
@@ -213,6 +220,7 @@ export function JobForm({ jobId }: { jobId?: string }) {
       categoryIds: categories.map((c) => c.id),
       jobTypeIds: jobTypes.map((t) => t.id),
       companyId: company?.id,
+      cityId: city?.id,
       coverImage: coverImage ? { key: coverImage.key } : null,
       thumbnail: thumbnail ? { key: thumbnail.key } : null,
       seo: {
@@ -376,6 +384,17 @@ export function JobForm({ jobId }: { jobId?: string }) {
                 onChange={(next) => {
                   markTouched("company");
                   setCompany(next);
+                }}
+              />
+
+              <CitySelectField
+                required
+                hint="The city this job is based in."
+                value={city}
+                error={show("city")}
+                onChange={(next) => {
+                  markTouched("city");
+                  setCity(next);
                 }}
               />
 

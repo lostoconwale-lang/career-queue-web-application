@@ -20,6 +20,12 @@ export interface JobCompanyRef {
   logo: EmbeddedMediaDTO | null;
 }
 
+// A city as it appears on a job — a snapshot of id + name.
+export interface JobCityRef {
+  id: string;
+  name: string;
+}
+
 export interface JobDTO {
   id: string;
   title: string;
@@ -27,6 +33,7 @@ export interface JobDTO {
   categories: JobCategoryRef[];
   jobTypes: JobTypeRef[];
   company: JobCompanyRef | null;
+  city: JobCityRef | null;
   coverImage: EmbeddedMediaDTO | null;
   thumbnail: EmbeddedMediaDTO | null;
   seo: SeoMeta;

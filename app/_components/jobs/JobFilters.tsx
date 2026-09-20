@@ -8,14 +8,17 @@ import type { JobFilterOption } from "@/types/public-job";
 export type JobFiltersState = {
   categories: string[];
   jobTypes: string[];
+  cities: string[];
 };
 
 type Props = {
   categories: JobFilterOption[];
   jobTypes: JobFilterOption[];
+  cities: JobFilterOption[];
   selected: JobFiltersState;
   onToggleCategory: (id: string) => void;
   onToggleJobType: (id: string) => void;
+  onToggleCity: (id: string) => void;
   onClearAll: () => void;
   /** Extra classes for the outer wrapper (e.g. sticky positioning on desktop). */
   className?: string;
@@ -24,13 +27,15 @@ type Props = {
 export function JobFilters({
   categories,
   jobTypes,
+  cities,
   selected,
   onToggleCategory,
   onToggleJobType,
+  onToggleCity,
   onClearAll,
   className = "",
 }: Props) {
-  const activeCount = selected.categories.length + selected.jobTypes.length;
+  const activeCount = selected.categories.length + selected.jobTypes.length + selected.cities.length;
 
   return (
     <div className={`space-y-5 ${className}`}>
@@ -67,6 +72,18 @@ export function JobFilters({
             count={jobType.count}
             checked={selected.jobTypes.includes(jobType.id)}
             onChange={() => onToggleJobType(jobType.id)}
+          />
+        ))}
+      </FilterSection>
+
+      <FilterSection title="City">
+        {cities.map((city) => (
+          <FilterCheckbox
+            key={city.id}
+            label={city.name}
+            count={city.count}
+            checked={selected.cities.includes(city.id)}
+            onChange={() => onToggleCity(city.id)}
           />
         ))}
       </FilterSection>

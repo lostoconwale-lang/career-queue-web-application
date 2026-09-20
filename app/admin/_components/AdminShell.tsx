@@ -20,6 +20,7 @@ import {
   FileText,
   Gauge,
   Grid,
+  Link as LinkIcon,
   ListView,
   LogOut,
   Mail,
@@ -54,6 +55,7 @@ const NAV: NavEntry[] = [
     label: "Manage content",
     icon: Grid,
     children: [
+      { label: "Header", href: "/admin/header", icon: LinkIcon },
       { label: "Hero section", href: "/admin/hero", icon: Sparkle },
       { label: "How it works", href: "/admin/how-it-works", icon: ListView },
       { label: "Popular categories", href: "/admin/popular-categories", icon: Tag },

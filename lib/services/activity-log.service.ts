@@ -316,6 +316,7 @@ function jobChangeMessage(job: JobDTO, patch: UpdateJobBody): string {
   if (patch.categoryIds !== undefined) return `Updated the categories for the job "${job.title}"`;
   if (patch.jobTypeIds !== undefined) return `Updated the job types for the job "${job.title}"`;
   if (patch.companyId !== undefined) return `Updated the company for the job "${job.title}"`;
+  if (patch.cityId !== undefined) return `Updated the city for the job "${job.title}"`;
   if (patch.coverImage !== undefined || patch.thumbnail !== undefined)
     return `Updated the images for the job "${job.title}"`;
   if (patch.seo !== undefined) return `Updated SEO details for the job "${job.title}"`;
@@ -431,7 +432,7 @@ export function logHeroUpdated(actor: ActivityActor): Promise<void> {
 }
 
 export function logHowItWorksUpdated(actor: ActivityActor): Promise<void> {
-  return write("how-it-works", "update", actor, "Updated the home page \"How it works\" section");
+  return write("how-it-works", "update", actor, 'Updated the home page "How it works" section');
 }
 
 export function logPopularCategoriesUpdated(actor: ActivityActor): Promise<void> {
@@ -441,6 +442,10 @@ export function logPopularCategoriesUpdated(actor: ActivityActor): Promise<void>
     actor,
     "Updated the featured categories on the home page",
   );
+}
+
+export function logHeaderUpdated(actor: ActivityActor): Promise<void> {
+  return write("header", "update", actor, "Updated the site header links");
 }
 
 export function logMediaUploaded(actor: ActivityActor, count: number): Promise<void> {

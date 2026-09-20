@@ -35,8 +35,8 @@ export default function HeroSearch({ quickFilters }: { quickFilters: string[] })
   function runSearch() {
     const params = new URLSearchParams();
     if (role.trim()) params.set("q", role.trim());
-    // Jobs carry no location yet, so the city only rides along in the URL —
-    // the listing picks it up once a job location field exists.
+    // Single quick pick from the hero — the listing page reads this as a
+    // one-city fallback when its own multi-select `cities` param is absent.
     if (cityId) params.set("city", cityId);
     const qs = params.toString();
     router.push(qs ? `/jobs?${qs}` : "/jobs");

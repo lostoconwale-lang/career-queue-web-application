@@ -15,4 +15,6 @@ export const CACHE_TAGS = {
   publicHowItWorks: "public-how-it-works",
   // The home page "Popular job categories" content.
   publicPopularCategories: "public-popular-categories",
+  // The site header's nav links.
+  publicHeader: "public-header",
 } as const;

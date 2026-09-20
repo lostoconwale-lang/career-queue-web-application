@@ -4,6 +4,8 @@ import type { Metadata } from "next";
 import Footer from "@/app/_components/Footer";
 import Nav from "@/app/_components/Nav";
 import { JobListingPage } from "@/app/jobs/JobListingPage";
+import { auth } from "@/lib/auth/nextauth";
+import { listPublicHeader } from "@/lib/services/public-header.service";
 import { listPublicSettings } from "@/lib/services/public-settings.service";
 
 export const runtime = "nodejs";
@@ -18,11 +20,20 @@ export const metadata: Metadata = {
 // public search/filter API (/api/v1/public/jobs, /api/v1/public/job-filters)
 // inside JobListingPage.
 export default async function JobsPage() {
-  const { siteName, iconLightUrl } = await listPublicSettings();
+  const [{ siteName, iconLightUrl }, headerLinks, session] = await Promise.all([
+    listPublicSettings(),
+    listPublicHeader(),
+    auth(),
+  ]);
 
   return (
     <>
-      <Nav iconUrl={iconLightUrl} siteName={siteName} />
+      <Nav
+        iconUrl={iconLightUrl}
+        siteName={siteName}
+        links={headerLinks}
+        isAuthenticated={Boolean(session?.user)}
+      />
       <main>
         <Suspense fallback={null}>
           <JobListingPage />

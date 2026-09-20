@@ -2,6 +2,7 @@ import "server-only";
 import { Types } from "mongoose";
 
 import { Category } from "@/lib/models/category.model";
+import { City } from "@/lib/models/city.model";
 import { Job } from "@/lib/models/job.model";
 import { JobType } from "@/lib/models/job-type.model";
 import { normalizeSearchText } from "@/lib/models/searchable";
@@ -26,6 +27,9 @@ export async function listPublicJobs(query: PublicJobsQuery): Promise<PublicJobL
   if (query.types?.length) {
     filter["jobTypes._id"] = { $in: query.types.map((id) => new Types.ObjectId(id)) };
   }
+  if (query.cities?.length) {
+    filter["city._id"] = { $in: query.cities.map((id) => new Types.ObjectId(id)) };
+  }
 
   const skip = (query.page - 1) * query.limit;
 
@@ -46,23 +50,30 @@ export async function listPublicJobs(query: PublicJobsQuery): Promise<PublicJobL
 // GET /api/v1/public/job-filters — active categories/job types plus how many
 // currently-active jobs carry each one, for the listing's filter panel.
 export async function getJobFilterOptions(): Promise<JobFilterOptionsDTO> {
-  const [categories, jobTypes, categoryCounts, jobTypeCounts] = await Promise.all([
-    Category.find({ isActive: true, isDeleted: false }).select("name").sort({ name: 1 }),
-    JobType.find({ isActive: true, isDeleted: false }).select("name").sort({ name: 1 }),
-    Job.aggregate<{ _id: Types.ObjectId; count: number }>([
-      { $match: ACTIVE_JOB_FILTER },
-      { $unwind: "$categories" },
-      { $group: { _id: "$categories._id", count: { $sum: 1 } } },
-    ]),
-    Job.aggregate<{ _id: Types.ObjectId; count: number }>([
-      { $match: ACTIVE_JOB_FILTER },
-      { $unwind: "$jobTypes" },
-      { $group: { _id: "$jobTypes._id", count: { $sum: 1 } } },
-    ]),
-  ]);
+  const [categories, jobTypes, cities, categoryCounts, jobTypeCounts, cityCounts] =
+    await Promise.all([
+      Category.find({ isActive: true, isDeleted: false }).select("name").sort({ name: 1 }),
+      JobType.find({ isActive: true, isDeleted: false }).select("name").sort({ name: 1 }),
+      City.find({ isActive: true, isDeleted: false }).select("name").sort({ name: 1 }),
+      Job.aggregate<{ _id: Types.ObjectId; count: number }>([
+        { $match: ACTIVE_JOB_FILTER },
+        { $unwind: "$categories" },
+        { $group: { _id: "$categories._id", count: { $sum: 1 } } },
+      ]),
+      Job.aggregate<{ _id: Types.ObjectId; count: number }>([
+        { $match: ACTIVE_JOB_FILTER },
+        { $unwind: "$jobTypes" },
+        { $group: { _id: "$jobTypes._id", count: { $sum: 1 } } },
+      ]),
+      Job.aggregate<{ _id: Types.ObjectId; count: number }>([
+        { $match: { ...ACTIVE_JOB_FILTER, city: { $ne: null } } },
+        { $group: { _id: "$city._id", count: { $sum: 1 } } },
+      ]),
+    ]);
 
   const categoryCountById = new Map(categoryCounts.map((c) => [c._id.toString(), c.count]));
   const jobTypeCountById = new Map(jobTypeCounts.map((t) => [t._id.toString(), t.count]));
+  const cityCountById = new Map(cityCounts.map((c) => [c._id.toString(), c.count]));
 
   return {
     categories: categories.map((c) => ({
@@ -74,6 +85,11 @@ export async function getJobFilterOptions(): Promise<JobFilterOptionsDTO> {
       id: t._id.toString(),
       name: t.name,
       count: jobTypeCountById.get(t._id.toString()) ?? 0,
+    })),
+    cities: cities.map((c) => ({
+      id: c._id.toString(),
+      name: c.name,
+      count: cityCountById.get(c._id.toString()) ?? 0,
     })),
   };
 }

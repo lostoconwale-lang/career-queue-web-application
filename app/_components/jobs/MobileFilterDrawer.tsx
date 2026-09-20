@@ -12,6 +12,7 @@ type Props = {
   onClose: () => void;
   categories: JobFilterOption[];
   jobTypes: JobFilterOption[];
+  cities: JobFilterOption[];
   /** The filters currently applied to the listing (the URL state). */
   applied: JobFiltersState;
   onApply: (next: JobFiltersState) => void;
@@ -25,6 +26,7 @@ export function MobileFilterDrawer({
   onClose,
   categories,
   jobTypes,
+  cities,
   applied,
   onApply,
 }: Props) {
@@ -72,7 +74,16 @@ export function MobileFilterDrawer({
     }));
   }
 
-  const draftCount = draft.categories.length + draft.jobTypes.length;
+  function toggleCity(id: string) {
+    setDraft((prev) => ({
+      ...prev,
+      cities: prev.cities.includes(id)
+        ? prev.cities.filter((c) => c !== id)
+        : [...prev.cities, id],
+    }));
+  }
+
+  const draftCount = draft.categories.length + draft.jobTypes.length + draft.cities.length;
 
   return (
     <AnimatePresence>
@@ -117,10 +128,12 @@ export function MobileFilterDrawer({
               <JobFilters
                 categories={categories}
                 jobTypes={jobTypes}
+                cities={cities}
                 selected={draft}
                 onToggleCategory={toggleCategory}
                 onToggleJobType={toggleJobType}
-                onClearAll={() => setDraft({ categories: [], jobTypes: [] })}
+                onToggleCity={toggleCity}
+                onClearAll={() => setDraft({ categories: [], jobTypes: [], cities: [] })}
               />
             </div>
 

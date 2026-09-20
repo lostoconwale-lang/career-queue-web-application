@@ -6,6 +6,7 @@ import { cursorPage } from "@/lib/api/response";
 import { mediaUrl } from "@/lib/media";
 import { sanitizeHtml } from "@/lib/sanitize-html";
 import { Category } from "@/lib/models/category.model";
+import { City } from "@/lib/models/city.model";
 import { Company } from "@/lib/models/company.model";
 import { JobType } from "@/lib/models/job-type.model";
 import { normalizeSearchText } from "@/lib/models/searchable";
@@ -13,6 +14,7 @@ import {
   Job,
   type JobHydrated,
   type JobCategory,
+  type JobCity,
   type JobCompany,
   type JobTypeSnapshot,
 } from "@/lib/models/job.model";
@@ -39,6 +41,7 @@ export function toJobDTO(j: JobHydrated): JobDTO {
           logo: embeddedMediaDTO(j.company.logo),
         }
       : null,
+    city: j.city ? { id: j.city._id.toString(), name: j.city.name } : null,
     coverImage: embeddedMediaDTO(j.coverImage),
     thumbnail: embeddedMediaDTO(j.thumbnail),
     seo: {
@@ -84,6 +87,13 @@ async function resolveCompany(id: string): Promise<JobCompany> {
   return { _id: doc._id, name: doc.name, logo: doc.logo };
 }
 
+// Resolve a city id to an embedded snapshot, rejecting an unknown/deleted one.
+async function resolveCity(id: string): Promise<JobCity> {
+  const doc = await City.findOne({ _id: id, isDeleted: false }).select("name");
+  if (!doc) throw new BadRequestError("Selected city no longer exists");
+  return { _id: doc._id, name: doc.name };
+}
+
 export async function getJobById(id: string): Promise<JobDTO> {
   if (!Types.ObjectId.isValid(id)) throw new NotFoundError("Job");
   const doc = await Job.findOne({ _id: id, isDeleted: false });
@@ -96,6 +106,7 @@ export async function listJobs(query: ListJobsQuery): Promise<CursorPage<JobDTO>
   if (query.isActive !== undefined) filter.isActive = query.isActive;
   if (query.categoryId) filter["categories._id"] = new Types.ObjectId(query.categoryId);
   if (query.jobTypeId) filter["jobTypes._id"] = new Types.ObjectId(query.jobTypeId);
+  if (query.cityId) filter["city._id"] = new Types.ObjectId(query.cityId);
   const term = query.q ? normalizeSearchText(query.q) : "";
   if (term) filter.searchKeyword = { $regex: term };
   if (query.cursor) filter._id = { $lt: new Types.ObjectId(query.cursor) };
@@ -114,6 +125,7 @@ export async function createJob(body: CreateJobBody): Promise<JobDTO> {
     categories: await resolveCategories(body.categoryIds),
     jobTypes: await resolveJobTypes(body.jobTypeIds),
     company: await resolveCompany(body.companyId),
+    city: await resolveCity(body.cityId),
     coverImage: body.coverImage,
     thumbnail: body.thumbnail,
     seo: body.seo,
@@ -131,6 +143,7 @@ export async function updateJob(id: string, patch: UpdateJobBody): Promise<JobDT
   if (patch.categoryIds !== undefined) doc.categories = await resolveCategories(patch.categoryIds);
   if (patch.jobTypeIds !== undefined) doc.jobTypes = await resolveJobTypes(patch.jobTypeIds);
   if (patch.companyId !== undefined) doc.set("company", await resolveCompany(patch.companyId));
+  if (patch.cityId !== undefined) doc.set("city", await resolveCity(patch.cityId));
   if (patch.coverImage !== undefined) doc.set("coverImage", patch.coverImage);
   if (patch.thumbnail !== undefined) doc.set("thumbnail", patch.thumbnail);
   if (patch.isActive !== undefined) doc.isActive = patch.isActive;

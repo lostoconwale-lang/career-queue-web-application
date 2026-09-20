@@ -15,6 +15,7 @@ export const ACTIVITY_LOG_TYPES = [
   "hero",
   "how-it-works",
   "popular-categories",
+  "header",
   "media",
   "cache",
 ] as const;

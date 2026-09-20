@@ -35,6 +35,7 @@ const TYPE_LABELS: Record<ActivityLogType, string> = {
   hero: "Hero section",
   "how-it-works": "How it works",
   "popular-categories": "Popular categories",
+  header: "Header",
   media: "Media",
   cache: "Cache",
 };

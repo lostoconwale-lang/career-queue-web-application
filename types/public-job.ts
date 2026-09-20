@@ -11,6 +11,7 @@ export interface JobFilterOption {
 export interface JobFilterOptionsDTO {
   categories: JobFilterOption[];
   jobTypes: JobFilterOption[];
+  cities: JobFilterOption[];
 }
 
 // Page-based (not cursor-based) since the public listing needs to jump to an

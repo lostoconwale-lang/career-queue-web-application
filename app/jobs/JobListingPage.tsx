@@ -18,7 +18,7 @@ import type { ApiResponse } from "@/types/api";
 import type { JobFilterOptionsDTO, PublicJobListDTO } from "@/types/public-job";
 
 const PAGE_SIZE = 6;
-const EMPTY_FILTER_OPTIONS: JobFilterOptionsDTO = { categories: [], jobTypes: [] };
+const EMPTY_FILTER_OPTIONS: JobFilterOptionsDTO = { categories: [], jobTypes: [], cities: [] };
 
 export function JobListingPage() {
   const router = useRouter();
@@ -28,6 +28,12 @@ export function JobListingPage() {
   const q = searchParams.get("q") ?? "";
   const selectedCategories = searchParams.get("categories")?.split(",").filter(Boolean) ?? [];
   const selectedJobTypes = searchParams.get("types")?.split(",").filter(Boolean) ?? [];
+  // `city` (singular) is the one-off quick pick pushed by the homepage hero
+  // search — it's only read as a fallback when the multi-select `cities`
+  // param isn't present, so a plain link like `/jobs?city=<id>` still works.
+  const legacyCity = searchParams.get("city");
+  const selectedCities =
+    searchParams.get("cities")?.split(",").filter(Boolean) ?? (legacyCity ? [legacyCity] : []);
   const view: JobView = searchParams.get("view") === "grid" ? "grid" : "list";
   const requestedPage = Math.max(1, Number(searchParams.get("page")) || 1);
 
@@ -93,12 +99,27 @@ export function JobListingPage() {
     });
   }
 
+  function toggleCity(id: string) {
+    const next = selectedCities.includes(id)
+      ? selectedCities.filter((c) => c !== id)
+      : [...selectedCities, id];
+    pushParams((params) => {
+      params.delete("city");
+      if (next.length) params.set("cities", next.join(","));
+      else params.delete("cities");
+      params.delete("page");
+    });
+  }
+
   function applyFilters(next: JobFiltersState) {
     pushParams((params) => {
       if (next.categories.length) params.set("categories", next.categories.join(","));
       else params.delete("categories");
       if (next.jobTypes.length) params.set("types", next.jobTypes.join(","));
       else params.delete("types");
+      params.delete("city");
+      if (next.cities.length) params.set("cities", next.cities.join(","));
+      else params.delete("cities");
       params.delete("page");
     });
   }
@@ -107,6 +128,8 @@ export function JobListingPage() {
     pushParams((params) => {
       params.delete("categories");
       params.delete("types");
+      params.delete("city");
+      params.delete("cities");
       params.delete("page");
     });
   }
@@ -117,6 +140,8 @@ export function JobListingPage() {
       params.delete("q");
       params.delete("categories");
       params.delete("types");
+      params.delete("city");
+      params.delete("cities");
       params.delete("page");
     });
   }
@@ -168,6 +193,7 @@ export function JobListingPage() {
     if (q) params.set("q", q);
     if (selectedCategories.length) params.set("categories", selectedCategories.join(","));
     if (selectedJobTypes.length) params.set("types", selectedJobTypes.join(","));
+    if (selectedCities.length) params.set("cities", selectedCities.join(","));
 
     fetch(`/api/v1/public/jobs?${params.toString()}`, { cache: "no-store" })
       .then((res) => {
@@ -194,17 +220,26 @@ export function JobListingPage() {
       alive = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [q, selectedCategories.join(","), selectedJobTypes.join(","), requestedPage]);
+  }, [q, selectedCategories.join(","), selectedJobTypes.join(","), selectedCities.join(","), requestedPage]);
 
   const items = listing?.items ?? [];
   const total = listing?.total ?? 0;
   const totalPages = listing?.totalPages ?? 1;
   const currentPage = listing?.page ?? requestedPage;
 
-  const hasActiveFilters = selectedCategories.length > 0 || selectedJobTypes.length > 0 || q !== "";
-  const activeFilterCount = selectedCategories.length + selectedJobTypes.length;
+  const hasActiveFilters =
+    selectedCategories.length > 0 ||
+    selectedJobTypes.length > 0 ||
+    selectedCities.length > 0 ||
+    q !== "";
+  const activeFilterCount =
+    selectedCategories.length + selectedJobTypes.length + selectedCities.length;
 
-  const filtersState: JobFiltersState = { categories: selectedCategories, jobTypes: selectedJobTypes };
+  const filtersState: JobFiltersState = {
+    categories: selectedCategories,
+    jobTypes: selectedJobTypes,
+    cities: selectedCities,
+  };
 
   return (
     <>
@@ -245,9 +280,11 @@ export function JobListingPage() {
                 <JobFilters
                   categories={filterOptions.categories}
                   jobTypes={filterOptions.jobTypes}
+                  cities={filterOptions.cities}
                   selected={filtersState}
                   onToggleCategory={toggleCategory}
                   onToggleJobType={toggleJobType}
+                  onToggleCity={toggleCity}
                   onClearAll={clearFilters}
                 />
               )}
@@ -323,6 +360,7 @@ export function JobListingPage() {
         onClose={() => setDrawerOpen(false)}
         categories={filterOptions.categories}
         jobTypes={filterOptions.jobTypes}
+        cities={filterOptions.cities}
         applied={filtersState}
         onApply={applyFilters}
       />

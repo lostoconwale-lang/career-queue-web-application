@@ -36,6 +36,8 @@ const jobTypeIdsSchema = z
 
 const jobCompanyIdSchema = objectIdSchema;
 
+const jobCityIdSchema = objectIdSchema;
+
 // An embedded image reference — just the storage key. Required for a job.
 const imageRefSchema = z.object({ key: z.string().trim().min(1).max(300) });
 
@@ -73,6 +75,7 @@ export const createJobBodySchema = z.object({
   categoryIds: jobCategoryIdsSchema,
   jobTypeIds: jobTypeIdsSchema,
   companyId: jobCompanyIdSchema,
+  cityId: jobCityIdSchema,
   coverImage: imageRefSchema,
   thumbnail: imageRefSchema,
   seo: jobSeoSchema,
@@ -87,6 +90,7 @@ export const updateJobBodySchema = z
     categoryIds: jobCategoryIdsSchema,
     jobTypeIds: jobTypeIdsSchema,
     companyId: jobCompanyIdSchema,
+    cityId: jobCityIdSchema,
     coverImage: imageRefSchema,
     thumbnail: imageRefSchema,
     isActive: z.boolean(),
@@ -100,5 +104,6 @@ export const listJobsQuerySchema = listQuerySchema.extend({
   isActive: boolFlag.optional(),
   categoryId: objectIdSchema.optional(),
   jobTypeId: objectIdSchema.optional(),
+  cityId: objectIdSchema.optional(),
 });
 export type ListJobsQuery = z.infer<typeof listJobsQuerySchema>;

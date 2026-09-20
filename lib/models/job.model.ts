@@ -34,6 +34,12 @@ export interface JobCompany {
   logo: EmbeddedMedia | null;
 }
 
+// A city snapshot embedded on the job. `_id` is the City's own id.
+export interface JobCity {
+  _id: Types.ObjectId;
+  name: string;
+}
+
 export interface JobDoc {
   _id: Types.ObjectId;
   title: string;
@@ -41,6 +47,7 @@ export interface JobDoc {
   categories: JobCategory[];
   jobTypes: JobTypeSnapshot[];
   company: JobCompany | null;
+  city: JobCity | null;
   coverImage: EmbeddedMedia | null;
   thumbnail: EmbeddedMedia | null;
   seo: SeoMeta;
@@ -73,6 +80,12 @@ const jobCompanySchema = new Schema<JobCompany>({
   logo: { type: embeddedMediaSchema, default: null },
 });
 
+// `_id` is the referenced City's own id.
+const jobCitySchema = new Schema<JobCity>({
+  _id: { type: Schema.Types.ObjectId, ref: "City", required: true },
+  name: { type: String, required: true, trim: true, maxlength: 120 },
+});
+
 const jobSchema = new Schema<JobDoc, JobModel>(
   {
     title: { type: String, required: true, trim: true, maxlength: 160 },
@@ -80,6 +93,7 @@ const jobSchema = new Schema<JobDoc, JobModel>(
     categories: { type: [jobCategorySchema], default: [] },
     jobTypes: { type: [jobTypeSnapshotSchema], default: [] },
     company: { type: jobCompanySchema, default: null },
+    city: { type: jobCitySchema, default: null },
     coverImage: { type: embeddedMediaSchema, default: null },
     thumbnail: { type: embeddedMediaSchema, default: null },
     seo: { type: seoSchema, default: () => ({}) },
@@ -96,6 +110,7 @@ jobSchema.pre("validate", function () {
     this.categories.map((c) => c.name).join(" "),
     this.jobTypes.map((t) => t.name).join(" "),
     this.company?.name,
+    this.city?.name,
     htmlToText(this.description),
   ]);
 });
@@ -105,6 +120,7 @@ jobSchema.index({ isActive: 1, isDeleted: 1 });
 jobSchema.index({ "categories._id": 1, isDeleted: 1 });
 jobSchema.index({ "jobTypes._id": 1, isDeleted: 1 });
 jobSchema.index({ "company._id": 1, isDeleted: 1 });
+jobSchema.index({ "city._id": 1, isDeleted: 1 });
 // Covers the public listing's default query shape (active, non-deleted,
 // newest first) so it's satisfied by an index scan with no in-memory sort.
 jobSchema.index({ isDeleted: 1, isActive: 1, createdAt: -1 });

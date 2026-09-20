@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { ConfirmDialog } from "@/app/_components/ConfirmDialog";
-import { Buildings, Close, Photo } from "@/app/_components/Icons";
+import { Buildings, Close, Photo, Pin } from "@/app/_components/Icons";
 import { SearchInput } from "@/app/_components/SearchInput";
 import { Select } from "@/app/_components/Select";
 import { Table, type Column } from "@/app/_components/Table";
@@ -14,6 +14,7 @@ import { redirectOnDenied } from "@/lib/auth-redirect";
 import { formatDate, formatDateTime, formatRelativeTime } from "@/lib/date";
 import type { ApiResponse, CursorPage } from "@/types/api";
 import type { CategoryDTO } from "@/types/category";
+import type { CityDTO } from "@/types/city";
 import type { JobTypeDTO } from "@/types/job-type";
 import type { JobDTO } from "@/types/job";
 
@@ -35,11 +36,13 @@ export function JobList() {
     status: Status;
     categoryId: string;
     jobTypeId: string;
-  }>({ q: "", status: "all", categoryId: "", jobTypeId: "" });
+    cityId: string;
+  }>({ q: "", status: "all", categoryId: "", jobTypeId: "", cityId: "" });
   const [cursors, setCursors] = useState<(string | null)[]>([null]);
 
   const [categories, setCategories] = useState<CategoryDTO[]>([]);
   const [jobTypes, setJobTypes] = useState<JobTypeDTO[]>([]);
+  const [cities, setCities] = useState<CityDTO[]>([]);
   const [data, setData] = useState<CursorPage<JobDTO> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -57,11 +60,12 @@ export function JobList() {
     query.status !== "all" ||
     query.categoryId !== "" ||
     query.jobTypeId !== "" ||
+    query.cityId !== "" ||
     qInput.trim() !== "";
 
   function clearFilters() {
     setQInput("");
-    setQuery({ q: "", status: "all", categoryId: "", jobTypeId: "" });
+    setQuery({ q: "", status: "all", categoryId: "", jobTypeId: "", cityId: "" });
     setCursors([null]);
   }
 
@@ -83,6 +87,15 @@ export function JobList() {
       )
       .then((json) => {
         if (json?.success) setJobTypes(json.data.items);
+      })
+      .catch(() => {});
+
+    fetch("/api/v1/cities?isActive=true&limit=100", { cache: "no-store" })
+      .then((res) =>
+        redirectOnDenied(res) ? null : (res.json() as Promise<ApiResponse<CursorPage<CityDTO>>>),
+      )
+      .then((json) => {
+        if (json?.success) setCities(json.data.items);
       })
       .catch(() => {});
   }, []);
@@ -107,6 +120,7 @@ export function JobList() {
     if (query.status === "inactive") params.set("isActive", "false");
     if (query.categoryId) params.set("categoryId", query.categoryId);
     if (query.jobTypeId) params.set("jobTypeId", query.jobTypeId);
+    if (query.cityId) params.set("cityId", query.cityId);
 
     fetch(`/api/v1/jobs?${params.toString()}`, { cache: "no-store" })
       .then((res) => {
@@ -242,6 +256,19 @@ export function JobList() {
         ),
     },
     {
+      key: "city",
+      header: "City",
+      cell: (j) =>
+        j.city ? (
+          <span className="text-ink inline-flex items-center gap-1.5 truncate text-sm">
+            <Pin className="text-muted/50 h-3.5 w-3.5 shrink-0" />
+            {j.city.name}
+          </span>
+        ) : (
+          <span className="text-muted text-xs">—</span>
+        ),
+    },
+    {
       key: "jobTypes",
       header: "Type",
       cell: (j) => (
@@ -355,6 +382,16 @@ export function JobList() {
             ...jobTypes.map((t) => ({ value: t.id, label: t.name })),
           ]}
           ariaLabel="Filter by job type"
+          className="w-full sm:w-48"
+        />
+        <Select
+          value={query.cityId}
+          onChange={(cityId) => applyQuery({ cityId })}
+          options={[
+            { value: "", label: "All cities" },
+            ...cities.map((c) => ({ value: c.id, label: c.name })),
+          ]}
+          ariaLabel="Filter by city"
           className="w-full sm:w-48"
         />
         {filtersActive ? (

@@ -5,7 +5,7 @@ import Link from "next/link";
 
 import { ApplyModal } from "@/app/_components/jobs/ApplyModal";
 import { CompanyLogo } from "@/app/_components/jobs/CompanyLogo";
-import { Buildings, Clock } from "@/app/_components/Icons";
+import { Buildings, Clock, Pin } from "@/app/_components/Icons";
 import { formatRelativeTime } from "@/lib/date";
 import { htmlToText } from "@/lib/sanitize-html";
 import type { JobDTO } from "@/types/job";
@@ -52,6 +52,15 @@ export function JobCard({ job, view }: Props) {
           ) : (
             <span className="text-muted text-sm font-medium">Company not listed</span>
           )}
+          {job.city ? (
+            <>
+              <span className="text-muted/40">·</span>
+              <span className="text-muted inline-flex min-w-0 items-center gap-1.5 text-sm">
+                <Pin className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">{job.city.name}</span>
+              </span>
+            </>
+          ) : null}
           <span className="text-muted/40">·</span>
           <span className="text-muted inline-flex items-center gap-1.5 text-xs">
             <Clock className="h-3.5 w-3.5 shrink-0" />

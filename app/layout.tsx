@@ -5,6 +5,7 @@ import { Fraunces, Inter } from "next/font/google";
 import "./globals.css";
 
 import WhatsAppButton from "./_components/WhatsAppButton";
+import { env } from "@/config/env";
 import { listPublicSettings } from "@/lib/services/public-settings.service";
 
 const inter = Inter({
@@ -35,7 +36,16 @@ export async function generateMetadata(): Promise<Metadata> {
     openGraph: {
       title,
       description,
-      images: [ogImageUrl || "/images/og-image.png"],
+      url: env.NEXT_PUBLIC_APP_URL,
+      siteName: "CareerQueue",
+      type: "website",
+      images: [
+        {
+          url: ogImageUrl || "/images/og-image.png",
+          width: 1200,
+          height: 630,
+        },
+      ],
     },
   };
 }
