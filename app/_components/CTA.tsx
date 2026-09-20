@@ -13,7 +13,7 @@ export default function CTA() {
           <span className="text-brand inline-block -rotate-2 font-light italic">next role</span>
         </h2>
         <p className="text-muted mx-auto mt-6 max-w-md text-lg">
-          Tell us what a good job looks like to you. We&apos;ll do the digging — free, forever.
+          Tell us what a good job looks like to you. We&apos;ll do the digging and match you with the best opportunities.
         </p>
         <Link
           href="/jobs"
