@@ -60,7 +60,7 @@ export default async function JobDetailPage({ params }: { params: Promise<Params
         isAuthenticated={Boolean(session?.user)}
       />
       <main>
-        <div className="mx-auto px-5 py-10 sm:px-8 sm:py-14">
+        <div className="mx-auto px-5  sm:px-8 ">
           <div className="rounded-card mt-6 overflow-hidden">
             {job.coverImage ? (
               // eslint-disable-next-line @next/next/no-img-element
