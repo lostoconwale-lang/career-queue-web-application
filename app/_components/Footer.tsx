@@ -26,7 +26,9 @@ export default async function Footer() {
     <footer className="bg-brand-soft px-5 pb-14 sm:px-8">
       <div className="border-brand/10 mx-auto grid max-w-6xl gap-12 border-t pt-14 sm:grid-cols-2 lg:grid-cols-4">
         <div className="lg:col-span-2">
-          <Logo iconUrl={iconDarkUrl} siteName={siteName} />
+          <Link href="/" aria-label="Home" className="w-fit cursor-pointer">
+            <Logo iconUrl={iconDarkUrl} siteName={siteName} />
+          </Link>
           {tagline ? <p className="text-muted mt-4 max-w-xs leading-relaxed">{tagline}</p> : null}
           {socialLinks.length > 0 ? (
             <ul className="mt-6 flex gap-3">

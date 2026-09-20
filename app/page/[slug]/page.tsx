@@ -8,6 +8,7 @@ import { env } from "@/config/env";
 import { auth } from "@/lib/auth/nextauth";
 import { getPublicPageBySlug } from "@/lib/services/public-page.service";
 import { listPublicHeader } from "@/lib/services/public-header.service";
+import { listPublicSettings } from "@/lib/services/public-settings.service";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -44,8 +45,9 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
 // (no HTTP round trip to our own API, since this already runs on the server).
 export default async function StaticPage({ params }: { params: Promise<Params> }) {
   const { slug } = await params;
-  const [page, headerLinks, session] = await Promise.all([
+  const [page, { siteName, iconLightUrl }, headerLinks, session] = await Promise.all([
     loadPage(slug),
+    listPublicSettings(),
     listPublicHeader(),
     auth(),
   ]);
@@ -53,7 +55,12 @@ export default async function StaticPage({ params }: { params: Promise<Params> }
 
   return (
     <>
-      <Nav links={headerLinks} isAuthenticated={Boolean(session?.user)} />
+      <Nav
+        iconUrl={iconLightUrl}
+        siteName={siteName}
+        links={headerLinks}
+        isAuthenticated={Boolean(session?.user)}
+      />
       <main>
         <div className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-24">
           <h1 className="font-display text-ink text-3xl font-semibold tracking-tight sm:text-4xl">

@@ -42,9 +42,9 @@ export default function Nav({
       }`}
     >
       <nav className="mx-auto flex h-18 max-w-6xl items-center gap-6 px-5 py-4 sm:px-8">
-        <a href="#top" aria-label="Home">
+        <Link href="/" aria-label="Home" className="cursor-pointer">
           <Logo iconUrl={iconUrl} siteName={siteName} />
-        </a>
+        </Link>
 
         <ul className="ml-auto hidden items-center gap-1 md:flex">
           {visibleLinks.map((link) => (

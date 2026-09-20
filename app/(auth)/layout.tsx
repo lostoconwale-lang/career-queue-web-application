@@ -11,7 +11,7 @@ export default async function AuthLayout({ children }: { children: ReactNode }) 
   return (
     <div className="bg-surface min-h-screen lg:grid lg:grid-cols-[1fr_1.05fr]">
       <div className="flex min-h-screen flex-col px-6 py-8 sm:px-12">
-        <Link href="/" className="w-fit">
+        <Link href="/" aria-label="Home" className="w-fit cursor-pointer">
           <Logo iconUrl={iconLightUrl} siteName={siteName} />
         </Link>
         <div className="flex flex-1 items-center justify-center py-12">
