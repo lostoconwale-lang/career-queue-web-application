@@ -14,10 +14,7 @@ import {
   Trash,
 } from "@/app/_components/Icons";
 import { Switch } from "@/app/admin/_components/table-ui";
-import {
-  HeaderLinkTargetField,
-  type HeaderLinkTargetValue,
-} from "@/app/admin/_components/HeaderLinkTargetField";
+import { LinkTargetField, type LinkTargetValue } from "@/app/admin/_components/LinkTargetField";
 import { redirectOnDenied } from "@/lib/auth-redirect";
 import { SITE_ROUTES } from "@/lib/site-routes";
 import type { ApiResponse } from "@/types/api";
@@ -40,12 +37,12 @@ const visibilityLabel = (value: HeaderVisibility) =>
 type LinkDraft = {
   key: string;
   label: string;
-  target: HeaderLinkTargetValue | null;
+  target: LinkTargetValue | null;
   visibility: HeaderVisibility;
   isActive: boolean;
 };
 
-function targetFromDTO(target: HeaderLinkTarget): HeaderLinkTargetValue {
+function targetFromDTO(target: HeaderLinkTarget): LinkTargetValue {
   if (target.type === "route") {
     const route = SITE_ROUTES.find((r) => r.path === target.path);
     return { type: "route", path: target.path, label: route?.label ?? target.path };
@@ -412,7 +409,7 @@ function HeaderLinkModal({
   onCancel: () => void;
 }) {
   const [label, setLabel] = useState(initial?.label ?? "");
-  const [target, setTarget] = useState<HeaderLinkTargetValue | null>(initial?.target ?? null);
+  const [target, setTarget] = useState<LinkTargetValue | null>(initial?.target ?? null);
   const [visibility, setVisibility] = useState<HeaderVisibility>(initial?.visibility ?? "all");
   const [isActive, setIsActive] = useState(initial?.isActive ?? true);
   const [submitted, setSubmitted] = useState(false);
@@ -479,7 +476,7 @@ function HeaderLinkModal({
             onChange={(e) => setLabel(e.target.value)}
           />
 
-          <HeaderLinkTargetField value={target} error={errors.target} onChange={setTarget} />
+          <LinkTargetField value={target} error={errors.target} onChange={setTarget} />
 
           <div>
             <span className="text-ink text-sm font-medium">Visibility</span>

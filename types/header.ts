@@ -19,11 +19,3 @@ export interface HeaderDTO {
   links: HeaderLinkDTO[];
   updatedAt: string;
 }
-
-// GET /api/v1/header/link-options — search results for the link destination picker.
-export interface HeaderLinkOptionDTO {
-  type: "route" | "page";
-  // The route path, or the static page's id.
-  value: string;
-  label: string;
-}

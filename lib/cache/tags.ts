@@ -17,4 +17,6 @@ export const CACHE_TAGS = {
   publicPopularCategories: "public-popular-categories",
   // The site header's nav links.
   publicHeader: "public-header",
+  // The site footer's link columns.
+  publicFooter: "public-footer",
 } as const;

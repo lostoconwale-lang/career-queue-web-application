@@ -14,7 +14,7 @@ import type { PublicSettingsDTO } from "@/types/public-settings";
 async function queryPublicSettings(): Promise<PublicSettingsDTO> {
   await connectToDatabase();
   const doc = await Settings.findOne({ key: SETTINGS_KEY }).select(
-    "siteName tagline whatsappNumber whatsappMessage whatsappEnabled logoLight logoDark favicon seo",
+    "siteName tagline whatsappNumber whatsappMessage whatsappEnabled logoLight logoDark favicon seo socialLinks",
   );
   return {
     siteName: doc?.siteName || "CareerQueue",
@@ -28,6 +28,7 @@ async function queryPublicSettings(): Promise<PublicSettingsDTO> {
     metaTitle: doc?.seo.metaTitle ?? "",
     metaDescription: doc?.seo.metaDescription ?? "",
     ogImageUrl: doc?.seo.ogImage ? mediaUrl(doc.seo.ogImage.key) : null,
+    socialLinks: (doc?.socialLinks ?? []).map((l) => ({ platform: l.platform, url: l.url })),
   };
 }
 

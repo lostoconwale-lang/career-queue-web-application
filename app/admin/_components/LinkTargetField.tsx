@@ -6,21 +6,23 @@ import { SearchInput } from "@/app/_components/SearchInput";
 import { Chevron } from "@/app/_components/Icons";
 import { redirectOnDenied } from "@/lib/auth-redirect";
 import type { ApiResponse } from "@/types/api";
-import type { HeaderLinkOptionDTO } from "@/types/header";
+import type { LinkOptionDTO } from "@/types/link-options";
 
-export type HeaderLinkTargetValue =
+export type LinkTargetValue =
   { type: "route"; path: string; label: string } | { type: "page"; pageId: string; label: string };
 
 type Props = {
-  value: HeaderLinkTargetValue | null;
-  onChange: (value: HeaderLinkTargetValue) => void;
+  value: LinkTargetValue | null;
+  onChange: (value: LinkTargetValue) => void;
   error?: string;
 };
 
-export function HeaderLinkTargetField({ value, onChange, error }: Props) {
+// Searchable destination picker shared by the header and footer link editors —
+// backed by GET /api/v1/link-options (known routes + static pages).
+export function LinkTargetField({ value, onChange, error }: Props) {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
-  const [options, setOptions] = useState<HeaderLinkOptionDTO[]>([]);
+  const [options, setOptions] = useState<LinkOptionDTO[]>([]);
   const [loading, setLoading] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -47,11 +49,9 @@ export function HeaderLinkTargetField({ value, onChange, error }: Props) {
       setLoading(true);
       const params = new URLSearchParams();
       if (q.trim()) params.set("q", q.trim());
-      fetch(`/api/v1/header/link-options?${params.toString()}`, { cache: "no-store" })
+      fetch(`/api/v1/link-options?${params.toString()}`, { cache: "no-store" })
         .then((res) =>
-          redirectOnDenied(res)
-            ? null
-            : (res.json() as Promise<ApiResponse<HeaderLinkOptionDTO[]>>),
+          redirectOnDenied(res) ? null : (res.json() as Promise<ApiResponse<LinkOptionDTO[]>>),
         )
         .then((json) => {
           if (!alive || !json) return;
@@ -67,7 +67,7 @@ export function HeaderLinkTargetField({ value, onChange, error }: Props) {
     };
   }, [open, q]);
 
-  function choose(option: HeaderLinkOptionDTO) {
+  function choose(option: LinkOptionDTO) {
     onChange(
       option.type === "route"
         ? { type: "route", path: option.value, label: option.label }

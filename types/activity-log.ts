@@ -16,6 +16,7 @@ export const ACTIVITY_LOG_TYPES = [
   "how-it-works",
   "popular-categories",
   "header",
+  "footer",
   "media",
   "cache",
 ] as const;

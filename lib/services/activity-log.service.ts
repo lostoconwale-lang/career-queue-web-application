@@ -448,6 +448,10 @@ export function logHeaderUpdated(actor: ActivityActor): Promise<void> {
   return write("header", "update", actor, "Updated the site header links");
 }
 
+export function logFooterUpdated(actor: ActivityActor): Promise<void> {
+  return write("footer", "update", actor, "Updated the site footer links");
+}
+
 export function logMediaUploaded(actor: ActivityActor, count: number): Promise<void> {
   const label = count === 1 ? "file" : "files";
   return write("media", "create", actor, `Uploaded ${count} ${label} to the media library`);

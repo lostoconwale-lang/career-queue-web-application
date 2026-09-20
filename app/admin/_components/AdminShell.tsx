@@ -32,6 +32,7 @@ import {
   Refresh,
   ShieldCheck,
   Sparkle,
+  Squiggle,
   Tag,
   UserRound,
   UsersRound,
@@ -56,6 +57,7 @@ const NAV: NavEntry[] = [
     icon: Grid,
     children: [
       { label: "Header", href: "/admin/header", icon: LinkIcon },
+      { label: "Footer", href: "/admin/footer", icon: Squiggle },
       { label: "Hero section", href: "/admin/hero", icon: Sparkle },
       { label: "How it works", href: "/admin/how-it-works", icon: ListView },
       { label: "Popular categories", href: "/admin/popular-categories", icon: Tag },

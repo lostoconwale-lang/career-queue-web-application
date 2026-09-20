@@ -2,14 +2,10 @@ import "server-only";
 import { Types } from "mongoose";
 
 import { BadRequestError } from "@/lib/api/errors";
-import { normalizeSearchText } from "@/lib/models/searchable";
-import { SITE_ROUTES } from "@/lib/site-routes";
 import { Header, HEADER_KEY, type HeaderHydrated } from "@/lib/models/header.model";
 import { StaticPage } from "@/lib/models/static-pages.model";
 import type { UpdateHeaderBody } from "@/lib/validators/header.validator";
-import type { HeaderDTO, HeaderLinkDTO, HeaderLinkOptionDTO } from "@/types/header";
-
-const LINK_OPTIONS_LIMIT = 20;
+import type { HeaderDTO, HeaderLinkDTO } from "@/types/header";
 
 // Load the singleton, creating it (empty) on first access.
 async function loadOrCreate(): Promise<HeaderHydrated> {
@@ -92,29 +88,4 @@ export async function updateHeader(body: UpdateHeaderBody): Promise<HeaderDTO> {
   );
   await doc.save();
   return toDTO(doc);
-}
-
-// Search across the known routes and static pages, for the header link editor.
-export async function listHeaderLinkOptions(q?: string): Promise<HeaderLinkOptionDTO[]> {
-  const term = q?.trim().toLowerCase() ?? "";
-
-  const routes: HeaderLinkOptionDTO[] = SITE_ROUTES.filter(
-    (r) => !term || r.label.toLowerCase().includes(term) || r.path.toLowerCase().includes(term),
-  ).map((r) => ({ type: "route", value: r.path, label: r.label }));
-
-  const filter: Record<string, unknown> = { isDeleted: false, isActive: true };
-  if (term) filter.searchKeyword = { $regex: normalizeSearchText(term) };
-
-  const pages = await StaticPage.find(filter)
-    .sort({ title: 1 })
-    .limit(LINK_OPTIONS_LIMIT)
-    .select("title");
-
-  const pageOptions: HeaderLinkOptionDTO[] = pages.map((p) => ({
-    type: "page",
-    value: p._id.toString(),
-    label: p.title,
-  }));
-
-  return [...routes, ...pageOptions];
 }

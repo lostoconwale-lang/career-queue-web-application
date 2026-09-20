@@ -32,9 +32,3 @@ export const updateHeaderBodySchema = z.object({
   links: z.array(headerLinkBodySchema).max(HEADER_LINKS_MAX, `At most ${HEADER_LINKS_MAX} links`),
 });
 export type UpdateHeaderBody = z.infer<typeof updateHeaderBodySchema>;
-
-// GET /api/v1/header/link-options
-export const headerLinkOptionsQuerySchema = z.object({
-  q: z.string().trim().max(120).optional(),
-});
-export type HeaderLinkOptionsQuery = z.infer<typeof headerLinkOptionsQuerySchema>;

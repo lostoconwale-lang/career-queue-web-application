@@ -55,7 +55,7 @@ export default async function StaticPage({ params }: { params: Promise<Params> }
     <>
       <Nav links={headerLinks} isAuthenticated={Boolean(session?.user)} />
       <main>
-        <div className="mx-auto max-w-3xl px-5 py-16 sm:px-8 sm:py-24">
+        <div className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-24">
           <h1 className="font-display text-ink text-3xl font-semibold tracking-tight sm:text-4xl">
             {page.title}
           </h1>
