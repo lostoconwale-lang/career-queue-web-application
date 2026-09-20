@@ -70,7 +70,7 @@ export default function Nav({
             href="/register"
             className="bg-ink text-surface shadow-soft rounded-full px-5 py-2.5 text-sm font-semibold transition-transform hover:-translate-y-0.5"
           >
-            Get started
+            Register
           </Link>
         </div>
       </nav>
