@@ -85,6 +85,7 @@ export function SettingsForm() {
   const [whatsappEnabled, setWhatsappEnabled] = useState(true);
   const [logoLight, setLogoLight] = useState<EmbeddedMediaDTO | null>(null);
   const [logoDark, setLogoDark] = useState<EmbeddedMediaDTO | null>(null);
+  const [favicon, setFavicon] = useState<EmbeddedMediaDTO | null>(null);
 
   const [notificationEmails, setNotificationEmails] = useState<string[]>([]);
   const [emailDraft, setEmailDraft] = useState("");
@@ -124,6 +125,7 @@ export function SettingsForm() {
         setWhatsappEnabled(s.whatsappEnabled);
         setLogoLight(s.logoLight);
         setLogoDark(s.logoDark);
+        setFavicon(s.favicon);
         setNotificationEmails(s.notificationEmails);
         setMetaTitle(s.seo.metaTitle);
         setMetaDescription(s.seo.metaDescription);
@@ -195,6 +197,7 @@ export function SettingsForm() {
       whatsappEnabled,
       logoLight: logoLight ? { key: logoLight.key } : null,
       logoDark: logoDark ? { key: logoDark.key } : null,
+      favicon: favicon ? { key: favicon.key } : null,
       notificationEmails,
       seo: {
         metaTitle: metaTitle.trim(),
@@ -310,31 +313,41 @@ export function SettingsForm() {
               <div className="lg:col-span-2">
                 <h2 className="font-display text-ink text-lg font-semibold">Branding</h2>
                 <p className="text-muted mt-0.5 text-sm">
-                  The logo and name shown in the header and emails.
+                  The icon and name shown in the header. The name is always shown as text — the
+                  icon is optional, shown next to it.
                 </p>
               </div>
 
               <ImageField
-                label="Logo — light background"
-                hint="Shown on light surfaces (the header). SVG or PNG."
+                label="Icon — light background"
+                hint="Shown next to the site name on light surfaces (the header). Square, SVG preferred, e.g. 64×64px, transparent background."
                 value={logoLight}
                 onChange={setLogoLight}
-                aspect="aspect-[5/2]"
+                aspect="aspect-square"
                 contain
               />
               <ImageField
-                label="Logo — dark background"
-                hint="Shown on dark surfaces (the footer, dark emails)."
+                label="Icon — dark background"
+                hint="Shown next to the site name on dark surfaces (the footer, dark emails). Square, SVG preferred, e.g. 64×64px, transparent background."
                 value={logoDark}
                 onChange={setLogoDark}
-                aspect="aspect-[5/2]"
+                aspect="aspect-square"
                 contain
                 dark
+              />
+              <ImageField
+                label="Favicon"
+                hint="Shown in the browser tab. Square, SVG or PNG, at least 32×32px — simple enough to read at a tiny size."
+                value={favicon}
+                onChange={setFavicon}
+                aspect="aspect-square"
+                contain
               />
 
               <AuthField
                 label="Website name *"
                 name="siteName"
+                hint="Shown as text next to the icon in the header, and in the footer."
                 placeholder="Acme Careers"
                 value={siteName}
                 error={siteNameError}

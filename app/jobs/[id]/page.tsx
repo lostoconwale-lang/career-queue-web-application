@@ -9,6 +9,7 @@ import { CompanyLogo } from "@/app/_components/jobs/CompanyLogo";
 import { ApplyButton } from "@/app/jobs/[id]/ApplyButton";
 import { connectToDatabase } from "@/lib/db/mongoose";
 import { getPublicJobById } from "@/lib/services/public-job.service";
+import { listPublicSettings } from "@/lib/services/public-settings.service";
 import { formatRelativeTime } from "@/lib/date";
 
 export const runtime = "nodejs";
@@ -38,7 +39,7 @@ export async function generateMetadata({
 // already runs on the server).
 export default async function JobDetailPage({ params }: { params: Promise<Params> }) {
   const { id } = await params;
-  const job = await loadJob(id);
+  const [job, { siteName, iconLightUrl }] = await Promise.all([loadJob(id), listPublicSettings()]);
   if (!job) notFound();
 
   const posted = formatRelativeTime(job.createdAt);
@@ -49,7 +50,7 @@ export default async function JobDetailPage({ params }: { params: Promise<Params
 
   return (
     <>
-      <Nav />
+      <Nav iconUrl={iconLightUrl} siteName={siteName} />
       <main>
         <div className="mx-auto px-5 py-10 sm:px-8 sm:py-14">
           <div className="mt-6 overflow-hidden rounded-card">

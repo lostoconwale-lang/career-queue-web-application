@@ -34,6 +34,7 @@ export interface SettingsDoc {
   whatsappEnabled: boolean;
   logoLight: EmbeddedMedia | null;
   logoDark: EmbeddedMedia | null;
+  favicon: EmbeddedMedia | null;
   notificationEmails: string[];
   seo: SettingsSeo;
   socialLinks: SocialLink[];
@@ -74,6 +75,7 @@ const settingsSchema = new Schema<SettingsDoc, SettingsModel>(
     whatsappEnabled: { type: Boolean, default: true },
     logoLight: { type: embeddedMediaSchema, default: null },
     logoDark: { type: embeddedMediaSchema, default: null },
+    favicon: { type: embeddedMediaSchema, default: null },
     notificationEmails: { type: [String], default: [] },
     seo: { type: settingsSeoSchema, default: () => ({}) },
     socialLinks: { type: [socialLinkSchema], default: [] },

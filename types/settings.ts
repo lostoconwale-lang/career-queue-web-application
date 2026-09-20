@@ -35,6 +35,7 @@ export interface SettingsDTO {
   whatsappEnabled: boolean;
   logoLight: EmbeddedMediaDTO | null;
   logoDark: EmbeddedMediaDTO | null;
+  favicon: EmbeddedMediaDTO | null;
   notificationEmails: string[];
   seo: SettingsSeo;
   socialLinks: SocialLink[];

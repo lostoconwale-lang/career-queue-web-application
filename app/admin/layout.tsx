@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 
 import { auth } from "@/lib/auth/nextauth";
+import { listPublicSettings } from "@/lib/services/public-settings.service";
 import { AdminShell } from "./_components/AdminShell";
 
 export const runtime = "nodejs";
@@ -13,5 +14,11 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   // Signed in, but not as an admin (or admin access was revoked mid-session).
   if (session.user.kind !== "admin") redirect("/no-access?code=403");
 
-  return <AdminShell name={session.user.name ?? "Admin"}>{children}</AdminShell>;
+  const { siteName, iconLightUrl } = await listPublicSettings();
+
+  return (
+    <AdminShell name={session.user.name ?? "Admin"} iconUrl={iconLightUrl} siteName={siteName}>
+      {children}
+    </AdminShell>
+  );
 }

@@ -8,6 +8,7 @@ import { cursorPage } from "@/lib/api/response";
 import { env } from "@/config/env";
 import { mediaUrl } from "@/lib/media";
 import { r2 } from "@/lib/r2";
+import { sanitizeHtml } from "@/lib/sanitize-html";
 import { Media, type MediaHydrated } from "@/lib/models/media.model";
 import { normalizeSearchText } from "@/lib/models/searchable";
 import type { ListMediaQuery } from "@/lib/validators/media.validator";
@@ -23,6 +24,7 @@ const ACCEPTED: Record<string, { ext: string; type: MediaFileType }> = {
   "image/webp": { ext: "webp", type: "image" },
   "image/avif": { ext: "avif", type: "image" },
   "image/gif": { ext: "gif", type: "image" },
+  "image/svg+xml": { ext: "svg", type: "image" },
   "video/mp4": { ext: "mp4", type: "video" },
   "video/webm": { ext: "webm", type: "video" },
   "video/quicktime": { ext: "mov", type: "video" },
@@ -96,6 +98,14 @@ export async function deleteMedia(id: string): Promise<MediaDTO> {
   return toMediaDTO(doc);
 }
 
+// SVGs can carry <script> tags and event-handler attributes that run if the
+// file is ever opened directly rather than embedded via <img> — strip those
+// before storing, same as admin-authored HTML elsewhere.
+async function uploadBody(file: File): Promise<Buffer> {
+  if (file.type === "image/svg+xml") return Buffer.from(sanitizeHtml(await file.text()), "utf-8");
+  return Buffer.from(await file.arrayBuffer());
+}
+
 export async function uploadFiles(
   files: File[],
   tags: string[],
@@ -121,7 +131,7 @@ export async function uploadFiles(
           new PutObjectCommand({
             Bucket: env.R2_BUCKET_NAME,
             Key: key,
-            Body: Buffer.from(await file.arrayBuffer()),
+            Body: await uploadBody(file),
             ContentType: file.type,
             CacheControl: "public, max-age=31536000, immutable",
           }),

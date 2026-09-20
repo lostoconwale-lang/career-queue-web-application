@@ -21,6 +21,7 @@ function toSettingsDTO(s: SettingsHydrated): SettingsDTO {
     whatsappEnabled: s.whatsappEnabled,
     logoLight: embeddedMediaDTO(s.logoLight),
     logoDark: embeddedMediaDTO(s.logoDark),
+    favicon: embeddedMediaDTO(s.favicon),
     notificationEmails: [...s.notificationEmails],
     seo: {
       metaTitle: s.seo.metaTitle,
@@ -61,6 +62,7 @@ export async function updateSettings(body: UpdateSettingsBody): Promise<Settings
   doc.whatsappEnabled = body.whatsappEnabled;
   doc.set("logoLight", body.logoLight);
   doc.set("logoDark", body.logoDark);
+  doc.set("favicon", body.favicon);
   doc.notificationEmails = body.notificationEmails;
 
   doc.seo.metaTitle = body.seo.metaTitle;

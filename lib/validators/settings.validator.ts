@@ -26,6 +26,7 @@ export const updateSettingsBodySchema = z.object({
   whatsappEnabled: z.boolean().default(true),
   logoLight: imageRefSchema.default(null),
   logoDark: imageRefSchema.default(null),
+  favicon: imageRefSchema.default(null),
   notificationEmails: z
     .array(emailSchema)
     .max(20, "At most 20 notification emails")

@@ -1,3 +1,4 @@
+import { listPublicSettings } from "@/lib/services/public-settings.service";
 import { GitHub, LinkedIn, XLogo } from "./Icons";
 import Logo from "./Logo";
 
@@ -18,12 +19,14 @@ const socials = [
   { label: "GitHub", Icon: GitHub },
 ];
 
-export default function Footer() {
+export default async function Footer() {
+  const { siteName, iconDarkUrl } = await listPublicSettings();
+
   return (
     <footer className="bg-brand-soft px-5 pb-14 sm:px-8">
       <div className="border-brand/10 mx-auto grid max-w-6xl gap-12 border-t pt-14 sm:grid-cols-2 lg:grid-cols-4">
         <div className="lg:col-span-2">
-          <Logo />
+          <Logo iconUrl={iconDarkUrl} siteName={siteName} />
           <p className="text-muted mt-4 max-w-xs leading-relaxed">
             Matching people to jobs that fit — the team, the pay, the pace.
           </p>
@@ -61,7 +64,7 @@ export default function Footer() {
       </div>
 
       <p className="text-muted mx-auto mt-12 max-w-6xl text-sm">
-        © {new Date().getFullYear()} CareerQueue. All rights reserved.
+        © {new Date().getFullYear()} {siteName}. All rights reserved.
       </p>
     </footer>
   );

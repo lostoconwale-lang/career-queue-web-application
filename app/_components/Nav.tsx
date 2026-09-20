@@ -5,7 +5,13 @@ import Link from "next/link";
 
 import Logo from "./Logo";
 
-export default function Nav() {
+export default function Nav({
+  iconUrl,
+  siteName,
+}: {
+  iconUrl?: string | null;
+  siteName?: string;
+}) {
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -24,8 +30,8 @@ export default function Nav() {
       }`}
     >
       <nav className="mx-auto flex h-18 max-w-6xl items-center gap-6 px-5 py-4 sm:px-8">
-        <a href="#top" aria-label="CareerQueue home">
-          <Logo />
+        <a href="#top" aria-label="Home">
+          <Logo iconUrl={iconUrl} siteName={siteName} />
         </a>
 
         <ul className="ml-auto hidden items-center gap-1 md:flex">

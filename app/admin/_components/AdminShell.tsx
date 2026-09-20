@@ -76,7 +76,17 @@ const NAV: NavEntry[] = [
   { label: "Cache", href: "/admin/cache", icon: Refresh },
 ];
 
-export function AdminShell({ name, children }: { name: string; children: ReactNode }) {
+export function AdminShell({
+  name,
+  iconUrl,
+  siteName,
+  children,
+}: {
+  name: string;
+  iconUrl?: string | null;
+  siteName?: string;
+  children: ReactNode;
+}) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [confirmingLogout, setConfirmingLogout] = useState(false);
@@ -106,7 +116,7 @@ export function AdminShell({ name, children }: { name: string; children: ReactNo
       >
         <div className="flex items-center justify-between">
           <Link href="/admin/dashboard" onClick={() => setOpen(false)}>
-            <Logo />
+            <Logo iconUrl={iconUrl} siteName={siteName} />
           </Link>
           <button
             type="button"

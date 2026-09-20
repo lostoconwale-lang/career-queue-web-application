@@ -5,6 +5,7 @@ import { Fraunces, Inter } from "next/font/google";
 import "./globals.css";
 
 import WhatsAppButton from "./_components/WhatsAppButton";
+import { listPublicSettings } from "@/lib/services/public-settings.service";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -19,17 +20,25 @@ const fraunces = Fraunces({
   axes: ["SOFT", "WONK", "opsz"],
 });
 
-export const metadata: Metadata = {
-  title: "CareerQueue — Great careers don't happen by accident",
-  description:
-    "CareerQueue matches people to jobs that actually fit — the team, the pay, the pace. Free forever for job seekers.",
-  openGraph: {
-    title: "CareerQueue — Great careers don't happen by accident",
-    description:
-      "CareerQueue matches people to jobs that actually fit — the team, the pay, the pace.",
-    images: ["/images/og-image.png"],
-  },
-};
+const DEFAULT_TITLE = "CareerQueue — Great careers don't happen by accident";
+const DEFAULT_DESCRIPTION =
+  "CareerQueue matches people to jobs that actually fit — the team, the pay, the pace. Free forever for job seekers.";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const { metaTitle, metaDescription, ogImageUrl } = await listPublicSettings();
+  const title = metaTitle || DEFAULT_TITLE;
+  const description = metaDescription || DEFAULT_DESCRIPTION;
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      images: [ogImageUrl || "/images/og-image.png"],
+    },
+  };
+}
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
