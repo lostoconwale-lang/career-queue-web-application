@@ -9,6 +9,7 @@ import { env } from "@/config/env";
 import { mediaUrl } from "@/lib/media";
 import { r2 } from "@/lib/r2";
 import { sanitizeHtml } from "@/lib/sanitize-html";
+import { compressImage, isRecompressible } from "@/lib/services/image-compress";
 import { Media, type MediaHydrated } from "@/lib/models/media.model";
 import { normalizeSearchText } from "@/lib/models/searchable";
 import type { ListMediaQuery } from "@/lib/validators/media.validator";
@@ -100,10 +101,12 @@ export async function deleteMedia(id: string): Promise<MediaDTO> {
 
 // SVGs can carry <script> tags and event-handler attributes that run if the
 // file is ever opened directly rather than embedded via <img> — strip those
-// before storing, same as admin-authored HTML elsewhere.
+// before storing, same as admin-authored HTML elsewhere. Raster images are
+// recompressed so admins no longer have to pre-shrink files before upload.
 async function uploadBody(file: File): Promise<Buffer> {
   if (file.type === "image/svg+xml") return Buffer.from(sanitizeHtml(await file.text()), "utf-8");
-  return Buffer.from(await file.arrayBuffer());
+  const buffer = Buffer.from(await file.arrayBuffer());
+  return isRecompressible(file.type) ? compressImage(buffer, file.type) : buffer;
 }
 
 export async function uploadFiles(
@@ -116,22 +119,25 @@ export async function uploadFiles(
     throw new BadRequestError(`Upload at most ${MAX_FILES} files at once`);
   }
 
-  const uploads = files.map((file) => {
-    const spec = ACCEPTED[file.type];
-    if (!spec) throw new BadRequestError(`Unsupported file type: ${file.type || "unknown"}`);
-    if (file.size === 0) throw new BadRequestError(`"${file.name}" is empty`);
-    if (file.size > MAX_SIZE) throw new BadRequestError(`"${file.name}" is larger than 25 MB`);
-    return { file, type: spec.type, key: `media/${spec.type}s/${randomUUID()}.${spec.ext}` };
-  });
+  const uploads = await Promise.all(
+    files.map(async (file) => {
+      const spec = ACCEPTED[file.type];
+      if (!spec) throw new BadRequestError(`Unsupported file type: ${file.type || "unknown"}`);
+      if (file.size === 0) throw new BadRequestError(`"${file.name}" is empty`);
+      if (file.size > MAX_SIZE) throw new BadRequestError(`"${file.name}" is larger than 25 MB`);
+      const body = await uploadBody(file);
+      return { file, type: spec.type, key: `media/${spec.type}s/${randomUUID()}.${spec.ext}`, body };
+    }),
+  );
 
   try {
     await Promise.all(
-      uploads.map(async ({ file, key }) =>
+      uploads.map(({ file, key, body }) =>
         r2.send(
           new PutObjectCommand({
             Bucket: env.R2_BUCKET_NAME,
             Key: key,
-            Body: await uploadBody(file),
+            Body: body,
             ContentType: file.type,
             CacheControl: "public, max-age=31536000, immutable",
           }),
@@ -146,11 +152,11 @@ export async function uploadFiles(
 
   try {
     const docs = await Media.insertMany(
-      uploads.map(({ file, key, type }) => ({
+      uploads.map(({ file, key, type, body }) => ({
         key,
         originalName: file.name,
         mimeType: file.type,
-        size: file.size,
+        size: body.length,
         fileType: type,
         tags,
         uploadedBy,
