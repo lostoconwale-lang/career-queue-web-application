@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { AuthField } from "@/app/_components/AuthField";
-import { ConfirmDialog } from "@/app/_components/ConfirmDialog";
+import { OtpInput } from "@/app/_components/OtpInput";
 // Google sign-in is disabled for now — re-enable this import when it ships.
 // import { AuthDivider, GoogleButton } from "@/app/_components/GoogleButton";
 import { Arrow } from "@/app/_components/Icons";
@@ -25,12 +25,15 @@ export default function RegisterPage() {
   const [errors, setErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [confirming, setConfirming] = useState(false);
+
+  // Set once registration succeeds — switches the page into the OTP step.
+  // Registration isn't considered complete until this is verified.
+  const [registeredEmail, setRegisteredEmail] = useState<string | null>(null);
 
   const update = (key: FieldKey) => (event: ChangeEvent<HTMLInputElement>) =>
     setForm((prev) => ({ ...prev, [key]: event.target.value }));
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setFormError(null);
 
@@ -46,15 +49,6 @@ export default function RegisterPage() {
       return;
     }
     setErrors({});
-    setConfirming(true);
-  }
-
-  async function createAccount() {
-    const parsed = registerFormSchema.safeParse(form);
-    if (!parsed.success) {
-      setConfirming(false);
-      return;
-    }
     setSubmitting(true);
 
     try {
@@ -77,13 +71,16 @@ export default function RegisterPage() {
         return;
       }
 
-      router.push("/pending");
+      setRegisteredEmail(parsed.data.email);
     } catch {
       setFormError("Something went wrong. Please try again.");
     } finally {
       setSubmitting(false);
-      setConfirming(false);
     }
+  }
+
+  if (registeredEmail) {
+    return <VerifyPhoneStep email={registeredEmail} onVerified={() => router.push("/pending")} />;
   }
 
   return (
@@ -91,7 +88,7 @@ export default function RegisterPage() {
       <h1 className="font-display text-ink text-3xl font-semibold tracking-tight sm:text-4xl">
         Create your <span className="text-brand font-light italic">account</span>
       </h1>
-     
+
       {formError ? (
         <p className="border-coral/30 bg-coral/10 text-coral mt-6 rounded-2xl border px-4 py-3 text-sm">
           {formError}
@@ -178,6 +175,111 @@ export default function RegisterPage() {
         onConfirm={createAccount}
         onCancel={() => setConfirming(false)}
       />
+    </div>
+  );
+}
+
+// Registration isn't complete until this succeeds — there's no way past this
+// step to /pending without the correct code (currently always "1234", see
+// lib/auth/otp.ts; a real SMS gateway will replace the stub in lib/sms/send-sms.ts).
+function VerifyPhoneStep({ email, onVerified }: { email: string; onVerified: () => void }) {
+  const [otp, setOtp] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [verifying, setVerifying] = useState(false);
+  const [resent, setResent] = useState(false);
+  const [resending, setResending] = useState(false);
+
+  async function verify(code: string) {
+    setError(null);
+    setVerifying(true);
+    try {
+      const res = await fetch("/api/v1/auth/verify-phone-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, otp: code }),
+      });
+      const json = (await res.json()) as ApiResponse<{ verified: boolean }>;
+      if (json.success) {
+        onVerified();
+      } else {
+        setError(json.error.message);
+        setOtp("");
+      }
+    } catch {
+      setError("Something went wrong. Please try again.");
+      setOtp("");
+    } finally {
+      setVerifying(false);
+    }
+  }
+
+  // Auto-submits the moment all 4 digits are entered — no extra tap needed.
+  function handleOtpChange(next: string) {
+    setOtp(next);
+    if (next.length === 4 && !verifying) void verify(next);
+  }
+
+  function handleVerify(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!/^\d{4}$/.test(otp)) {
+      setError("Enter the 4-digit code");
+      return;
+    }
+    void verify(otp);
+  }
+
+  async function handleResend() {
+    setResending(true);
+    setOtp("");
+    setError(null);
+    try {
+      await fetch("/api/v1/auth/resend-phone-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      setResent(true);
+      setError(null);
+    } finally {
+      setResending(false);
+    }
+  }
+
+  return (
+    <div>
+      <h1 className="font-display text-ink text-3xl font-semibold tracking-tight sm:text-4xl">
+        Verify your <span className="text-brand font-light italic">phone</span>
+      </h1>
+      <p className="text-muted mt-3">
+        We&apos;ve sent a 4-digit code by SMS to the mobile number you entered. Enter it below to
+        finish creating your account.
+      </p>
+
+      <form onSubmit={handleVerify} className="mt-8" noValidate>
+        <OtpInput value={otp} onChange={handleOtpChange} error={Boolean(error)} disabled={verifying} />
+
+        {error ? <p className="text-coral mt-4 text-center text-sm">{error}</p> : null}
+
+        <button
+          type="submit"
+          disabled={verifying || otp.length < 4}
+          className="group bg-brand text-surface shadow-soft mt-6 flex w-full items-center justify-center gap-2 rounded-full px-7 py-3.5 text-base font-semibold transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
+        >
+          {verifying ? "Verifying…" : "Verify phone"}
+          {verifying ? null : (
+            <Arrow className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+          )}
+        </button>
+      </form>
+
+      <button
+        type="button"
+        onClick={handleResend}
+        disabled={resending}
+        className="text-brand mt-6 block text-center text-sm font-medium hover:underline disabled:opacity-60"
+      >
+        {resent ? "Code resent" : resending ? "Sending…" : "Resend code"}
+      </button>
     </div>
   );
 }

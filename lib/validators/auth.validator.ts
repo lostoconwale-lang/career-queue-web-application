@@ -69,6 +69,26 @@ export type VerifyEmailBody = z.infer<typeof verifyEmailBodySchema>;
 export const resendVerificationBodySchema = z.object({ email: emailInputSchema });
 export type ResendVerificationBody = z.infer<typeof resendVerificationBodySchema>;
 
+/* ---------------------------- phone verification -------------------------- */
+
+const otpSchema = z.string().trim().regex(/^\d{4}$/, "Enter the 4-digit code");
+
+// Same either-identifier shape as loginBodySchema — the login-time popup
+// re-verifies whichever identifier (email or mobile) the user actually
+// logged in with; the registration OTP step always has the email in hand.
+const identifierSchema = z
+  .object({ email: emailSchema.optional(), phone: phoneSchema.optional() })
+  .refine((v) => Boolean(v.email) || Boolean(v.phone), {
+    message: "Email or mobile number is required",
+    path: ["email"],
+  });
+
+export const verifyPhoneOtpBodySchema = identifierSchema.and(z.object({ otp: otpSchema }));
+export type VerifyPhoneOtpBody = z.infer<typeof verifyPhoneOtpBodySchema>;
+
+export const resendPhoneOtpBodySchema = identifierSchema;
+export type ResendPhoneOtpBody = z.infer<typeof resendPhoneOtpBodySchema>;
+
 /* ----------------------------- password reset ----------------------------- */
 
 export const forgotPasswordBodySchema = z.object({ email: emailInputSchema });

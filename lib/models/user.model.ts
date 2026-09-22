@@ -40,6 +40,11 @@ export interface UserDoc {
   // Same pattern, for "forgot password" links.
   passwordResetTokenHash?: string;
   passwordResetExpires?: Date;
+  // Required to complete manual registration and to log in — see
+  // lib/auth/otp.ts. Absent for Google accounts (no OTP step there yet).
+  phoneVerified: boolean;
+  phoneOtpHash?: string;
+  phoneOtpExpires?: Date;
   // Flips true the first time credentials or Google sign-in succeed — gates
   // the one-time "first login" admin alert so repeat logins stay quiet.
   hasLoggedInBefore: boolean;
@@ -76,6 +81,9 @@ const userSchema = new Schema<UserDoc, UserModel>(
     emailVerificationExpires: { type: Date, select: false },
     passwordResetTokenHash: { type: String, select: false },
     passwordResetExpires: { type: Date, select: false },
+    phoneVerified: { type: Boolean, required: true, default: false },
+    phoneOtpHash: { type: String, select: false },
+    phoneOtpExpires: { type: Date, select: false },
     hasLoggedInBefore: { type: Boolean, required: true, default: false },
     searchKeyword: { type: String, required: true, select: false },
   },
@@ -103,6 +111,7 @@ userSchema.index({ searchKeyword: 1 });
 // Sparse — most users have no pending verification/reset token.
 userSchema.index({ emailVerificationTokenHash: 1 }, { sparse: true });
 userSchema.index({ passwordResetTokenHash: 1 }, { sparse: true });
+userSchema.index({ phoneOtpHash: 1 }, { sparse: true });
 
 // In dev, drop the cached model on hot-reload so schema edits take effect
 // without restarting the server. In prod the module evaluates once.

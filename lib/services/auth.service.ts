@@ -1,9 +1,17 @@
 import "server-only";
 
-import { ConflictError, ForbiddenError, UnauthorizedError } from "@/lib/api/errors";
+import {
+  ConflictError,
+  EmailNotVerifiedError,
+  ForbiddenError,
+  PhoneNotVerifiedError,
+  UnauthorizedError,
+} from "@/lib/api/errors";
 import { hashPassword, verifyPassword } from "@/lib/auth/password";
 import { issueTokenPair, verifyRefreshToken } from "@/lib/auth/jwt";
 import { createToken, hashToken } from "@/lib/auth/token";
+import { generateOtp, hashOtp, OTP_TTL_MS } from "@/lib/auth/otp";
+import { sendSms } from "@/lib/sms/send-sms";
 import { env } from "@/config/env";
 import { sendVerificationEmail } from "@/lib/email/send-verification-email";
 import {
@@ -48,9 +56,36 @@ async function issueAndSendVerificationEmail(user: {
   }
 }
 
+// Same shape as issueAndSendVerificationEmail, for the phone side: generate
+// (currently always "1234" — see lib/auth/otp.ts), save its hash, "send" it
+// (currently a console.warn stub — see lib/sms/send-sms.ts).
+async function issueAndSendPhoneOtp(user: {
+  _id: { toString(): string };
+  phone?: { countryCode: string; number: string };
+}): Promise<void> {
+  if (!user.phone?.number) return; // Google accounts before the phone step.
+
+  const otp = generateOtp();
+  await User.updateOne(
+    { _id: user._id },
+    { phoneOtpHash: hashOtp(otp), phoneOtpExpires: new Date(Date.now() + OTP_TTL_MS) },
+  );
+
+  try {
+    await sendSms(
+      `${user.phone.countryCode}${user.phone.number}`,
+      `Your CareerQueue verification code is ${otp}. It expires in 10 minutes.`,
+    );
+  } catch (error) {
+    console.error("[auth] failed to send phone OTP:", error);
+  }
+}
+
 // Creates a pending account. No tokens are issued — an admin must approve it
-// (adminVerified) before it can sign in. A verification email goes out
-// separately (emailVerified), which isn't currently a login gate.
+// (adminVerified) before it can sign in, and login is also blocked until both
+// emailVerified and phoneVerified are true. The register page keeps the user
+// on an OTP step until phone verification succeeds; email verification is
+// async (a link) and is instead enforced/re-sent at login time.
 export async function registerUser(body: RegisterBody): Promise<{ user: UserDTO }> {
   if (await User.exists({ email: body.email })) {
     throw new ConflictError("An account with this email already exists");
@@ -68,9 +103,47 @@ export async function registerUser(body: RegisterBody): Promise<{ user: UserDTO 
   });
 
   await issueAndSendVerificationEmail(doc);
+  await issueAndSendPhoneOtp(doc);
   await logUserRegistered({ id: doc._id.toString(), name: doc.name, email: doc.email });
 
   return { user: toUserDTO(doc) };
+}
+
+type Identifier = { email?: string; phone?: { countryCode: string; number: string } };
+
+function identifierFilter(identifier: Identifier): Record<string, unknown> {
+  return identifier.email ? { email: identifier.email } : { "phone.number": identifier.phone?.number };
+}
+
+// POST /api/v1/auth/verify-phone-otp — the registration page's OTP step (and
+// the login-time popup for pre-existing accounts) both call this. Accepts
+// either identifier since login (and so the login-time popup) can use either.
+export async function verifyPhoneOtp(body: Identifier & { otp: string }): Promise<void> {
+  const user = await User.findOne(identifierFilter(body)).select("+phoneOtpHash +phoneOtpExpires");
+  if (!user) throw new UnauthorizedError("Invalid code");
+
+  if (
+    !user.phoneOtpHash ||
+    !user.phoneOtpExpires ||
+    user.phoneOtpExpires < new Date() ||
+    user.phoneOtpHash !== hashOtp(body.otp)
+  ) {
+    throw new UnauthorizedError("That code is incorrect or has expired");
+  }
+
+  user.phoneVerified = true;
+  user.phoneOtpHash = undefined;
+  user.phoneOtpExpires = undefined;
+  await user.save();
+}
+
+// POST /api/v1/auth/resend-phone-otp — silently no-ops for an unknown
+// identifier or an already-verified account, same anti-enumeration pattern
+// as the other resend endpoints.
+export async function resendPhoneOtp(identifier: Identifier): Promise<void> {
+  const user = await User.findOne(identifierFilter(identifier));
+  if (!user || user.phoneVerified) return;
+  await issueAndSendPhoneOtp(user);
 }
 
 // POST /api/v1/auth/verify-email — the link from the email calls this.
@@ -183,6 +256,8 @@ export async function upsertGoogleUser(profile: {
     registrationType: "google",
     status: "active",
     adminVerified: false,
+    // Google already confirmed this address; nothing to verify.
+    emailVerified: true,
   });
   return { id: doc._id.toString(), needsPhone: true, adminVerified: false };
 }
@@ -219,6 +294,19 @@ export async function verifyCredentials(body: LoginBody): Promise<{
   const ok = await verifyPassword(body.password, user.passwordHash);
   if (!ok) throw new UnauthorizedError("Invalid credentials");
   if (user.status !== "active") throw new ForbiddenError("Account is suspended");
+
+  // Identity checks first (the user can act on these themselves); admin
+  // approval is checked last since it's out of their hands either way. Each
+  // resends a fresh code/link right at the failed attempt, so an account
+  // created before this gate existed can still self-serve past it.
+  if (!user.phoneVerified) {
+    await issueAndSendPhoneOtp(user);
+    throw new PhoneNotVerifiedError();
+  }
+  if (!user.emailVerified) {
+    await issueAndSendVerificationEmail(user);
+    throw new EmailNotVerifiedError();
+  }
   if (!user.adminVerified) throw new ForbiddenError("Your account is awaiting admin approval");
 
   if (!user.hasLoggedInBefore) {

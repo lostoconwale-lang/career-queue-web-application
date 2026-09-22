@@ -47,6 +47,20 @@ export class ForbiddenError extends ApiError {
   }
 }
 
+// Distinct codes (not just FORBIDDEN) so the login form can tell these apart
+// from a generic denial and show the right popup instead of a plain banner.
+export class EmailNotVerifiedError extends ApiError {
+  constructor(message = "Please verify your email address to continue") {
+    super(403, "EMAIL_NOT_VERIFIED", message);
+  }
+}
+
+export class PhoneNotVerifiedError extends ApiError {
+  constructor(message = "Please verify your mobile number to continue") {
+    super(403, "PHONE_NOT_VERIFIED", message);
+  }
+}
+
 export class NotFoundError extends ApiError {
   constructor(resource = "Resource") {
     super(404, "NOT_FOUND", `${resource} not found`);

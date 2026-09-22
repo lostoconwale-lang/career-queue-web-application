@@ -10,8 +10,10 @@ import { AuthField } from "@/app/_components/AuthField";
 // Google sign-in is disabled for now — re-enable this import when it ships.
 // import { AuthDivider, GoogleButton } from "@/app/_components/GoogleButton";
 import { ForgotPasswordDialog } from "@/app/_components/ForgotPasswordDialog";
+import { VerifyEmailPromptDialog } from "@/app/_components/VerifyEmailPromptDialog";
+import { VerifyPhoneDialog } from "@/app/_components/VerifyPhoneDialog";
 import { Arrow } from "@/app/_components/Icons";
-import { buildLoginPayload, loginFormSchema } from "@/lib/validators/auth.validator";
+import { buildLoginPayload, loginFormSchema, type LoginBody } from "@/lib/validators/auth.validator";
 import type { ApiResponse } from "@/types/api";
 
 type Method = "email" | "mobile";
@@ -27,6 +29,12 @@ export default function LoginPage() {
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [forgotOpen, setForgotOpen] = useState(false);
+  const [emailPromptOpen, setEmailPromptOpen] = useState(false);
+  const [phoneDialogOpen, setPhoneDialogOpen] = useState(false);
+
+  // The most recent attempt — replayed once the phone-verify popup succeeds,
+  // so the user doesn't have to re-type their password.
+  const [pendingLogin, setPendingLogin] = useState<LoginBody | null>(null);
 
   function switchMethod(next: Method) {
     setMethod(next);
@@ -34,7 +42,59 @@ export default function LoginPage() {
     setFormError(null);
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function attemptLogin(payload: LoginBody) {
+    setFormError(null);
+    setSubmitting(true);
+
+    try {
+      // 1. Validate credentials + surface the real reason (bad password vs.
+      //    awaiting approval vs. unverified email/phone vs. Google-only account).
+      const res = await fetch("/api/v1/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const json = (await res.json()) as ApiResponse<unknown>;
+      if (!json.success) {
+        if (json.error.code === "PHONE_NOT_VERIFIED") {
+          setPendingLogin(payload);
+          setPhoneDialogOpen(true);
+          return;
+        }
+        if (json.error.code === "EMAIL_NOT_VERIFIED") {
+          setPendingLogin(payload);
+          setEmailPromptOpen(true);
+          return;
+        }
+        setFormError(json.error.message);
+        return;
+      }
+
+      // 2. Establish the browser session via the credentials provider. Only
+      //    the relevant identifier key is included — `signIn` serializes
+      //    every option to a string, so an `email: undefined` here would
+      //    become the literal string "undefined" and get picked up as a
+      //    (bogus, truthy) email on the other side.
+      const outcome = await signIn("credentials", {
+        redirect: false,
+        password: payload.password,
+        ...(payload.email ? { email: payload.email } : { phoneNumber: payload.phone?.number }),
+      });
+      if (outcome?.error) {
+        setFormError("Could not start your session. Please try again.");
+        return;
+      }
+
+      router.push("/jobs");
+      router.refresh();
+    } catch {
+      setFormError("Something went wrong. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setFormError(null);
 
@@ -52,48 +112,7 @@ export default function LoginPage() {
     }
 
     setErrors({});
-    setSubmitting(true);
-
-    try {
-      const payload = buildLoginPayload(parsed.data);
-
-      // 1. Validate credentials + surface the real reason (bad password vs.
-      //    awaiting approval vs. deactivated vs. Google-only account).
-      const res = await fetch("/api/v1/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const json = (await res.json()) as ApiResponse<unknown>;
-      if (!json.success) {
-        setFormError(json.error.message);
-        return;
-      }
-
-      // 2. Establish the browser session via the credentials provider. Only
-      //    the relevant identifier key is included — `signIn` serializes
-      //    every option to a string, so an `email: undefined` here would
-      //    become the literal string "undefined" and get picked up as a
-      //    (bogus, truthy) email on the other side.
-      const outcome = await signIn("credentials", {
-        redirect: false,
-        password: parsed.data.password,
-        ...(parsed.data.method === "email"
-          ? { email: parsed.data.email }
-          : { phoneNumber: parsed.data.mobile }),
-      });
-      if (outcome?.error) {
-        setFormError("Could not start your session. Please try again.");
-        return;
-      }
-
-      router.push("/jobs");
-      router.refresh();
-    } catch {
-      setFormError("Something went wrong. Please try again.");
-    } finally {
-      setSubmitting(false);
-    }
+    void attemptLogin(buildLoginPayload(parsed.data));
   }
 
   return (
@@ -198,6 +217,23 @@ export default function LoginPage() {
       </p>
 
       <ForgotPasswordDialog open={forgotOpen} onClose={() => setForgotOpen(false)} />
+
+      <VerifyEmailPromptDialog
+        open={emailPromptOpen}
+        onClose={() => setEmailPromptOpen(false)}
+      />
+
+      {pendingLogin ? (
+        <VerifyPhoneDialog
+          open={phoneDialogOpen}
+          identifier={{ email: pendingLogin.email, phone: pendingLogin.phone }}
+          onClose={() => setPhoneDialogOpen(false)}
+          onVerified={() => {
+            setPhoneDialogOpen(false);
+            void attemptLogin(pendingLogin);
+          }}
+        />
+      ) : null}
     </div>
   );
 }
