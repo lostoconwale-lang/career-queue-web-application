@@ -12,6 +12,11 @@ import {
 } from "@/lib/email/send-password-reset-email";
 import { User } from "@/lib/models/user.model";
 import { adminSessionValid } from "@/lib/services/admin.service";
+import {
+  logPasswordChanged,
+  logUserFirstLogin,
+  logUserRegistered,
+} from "@/lib/services/alert.service";
 import { toUserDTO } from "@/lib/services/user.service";
 import type { CompleteProfileBody, LoginBody, RegisterBody } from "@/lib/validators/auth.validator";
 import type { TokenPair } from "@/types/auth";
@@ -63,6 +68,7 @@ export async function registerUser(body: RegisterBody): Promise<{ user: UserDTO 
   });
 
   await issueAndSendVerificationEmail(doc);
+  await logUserRegistered({ id: doc._id.toString(), name: doc.name, email: doc.email });
 
   return { user: toUserDTO(doc) };
 }
@@ -142,6 +148,8 @@ export async function resetPassword({
   user.passwordResetTokenHash = undefined;
   user.passwordResetExpires = undefined;
   await user.save();
+
+  await logPasswordChanged({ id: user._id.toString(), name: user.name, email: user.email });
 }
 
 // First Google sign-in creates the account (no phone yet); a matching email just
@@ -152,6 +160,17 @@ export async function upsertGoogleUser(profile: {
 }): Promise<{ id: string; needsPhone: boolean; adminVerified: boolean }> {
   const existing = await User.findOne({ email: profile.email });
   if (existing) {
+    // Only reachable once approved (the signIn callback redirects to
+    // /pending otherwise), so this is genuinely the first real sign-in.
+    if (existing.adminVerified && !existing.hasLoggedInBefore) {
+      existing.hasLoggedInBefore = true;
+      await existing.save();
+      await logUserFirstLogin({
+        id: existing._id.toString(),
+        name: existing.name,
+        email: existing.email,
+      });
+    }
     return {
       id: existing._id.toString(),
       needsPhone: !existing.phone?.number,
@@ -201,6 +220,12 @@ export async function verifyCredentials(body: LoginBody): Promise<{
   if (!ok) throw new UnauthorizedError("Invalid credentials");
   if (user.status !== "active") throw new ForbiddenError("Account is suspended");
   if (!user.adminVerified) throw new ForbiddenError("Your account is awaiting admin approval");
+
+  if (!user.hasLoggedInBefore) {
+    user.hasLoggedInBefore = true;
+    await user.save();
+    await logUserFirstLogin({ id: user._id.toString(), name: user.name, email: user.email });
+  }
 
   return { id: user._id.toString(), email: user.email, name: user.name };
 }

@@ -27,6 +27,9 @@ export function Profile() {
   const [sendingReset, setSendingReset] = useState(false);
   const [resetSent, setResetSent] = useState(false);
 
+  const [sendingVerify, setSendingVerify] = useState(false);
+  const [verifySent, setVerifySent] = useState(false);
+
   const [confirmingLogout, setConfirmingLogout] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
 
@@ -101,6 +104,21 @@ export function Profile() {
     }
   }
 
+  async function resendVerification() {
+    if (state.status !== "ready") return;
+    setSendingVerify(true);
+    try {
+      await fetch("/api/v1/auth/resend-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: state.user.email }),
+      });
+      setVerifySent(true);
+    } finally {
+      setSendingVerify(false);
+    }
+  }
+
   function logout() {
     setSigningOut(true);
     void signOut({ callbackUrl: "/login" });
@@ -166,6 +184,27 @@ export function Profile() {
             Email and mobile number can&apos;t be changed here — contact support if either needs
             to be updated.
           </p>
+
+          {!state.user.emailVerified ? (
+            <div className="border-brand/20 bg-brand-soft mt-6 flex items-center justify-between gap-4 rounded-2xl border p-6">
+              <div>
+                <h2 className="text-ink text-sm font-semibold">Verify your email</h2>
+                <p className="text-muted mt-1 text-sm">
+                  {verifySent
+                    ? `We've sent a new link to ${state.user.email}.`
+                    : "Your email address hasn't been confirmed yet."}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={resendVerification}
+                disabled={sendingVerify || verifySent}
+                className="bg-brand text-surface shrink-0 rounded-full px-5 py-2.5 text-sm font-semibold transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
+              >
+                {verifySent ? "Link sent" : sendingVerify ? "Sending…" : "Resend verification email"}
+              </button>
+            </div>
+          ) : null}
 
           <div className="border-line bg-surface shadow-soft mt-6 flex items-center justify-between gap-4 rounded-2xl border p-6">
             <div>

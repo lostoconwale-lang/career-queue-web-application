@@ -3,6 +3,7 @@ import { Types } from "mongoose";
 
 import { ConflictError, NotFoundError } from "@/lib/api/errors";
 import { cursorPage } from "@/lib/api/response";
+import { logJobApplied } from "@/lib/services/alert.service";
 import { Job } from "@/lib/models/job.model";
 import {
   JobApplication,
@@ -90,6 +91,10 @@ export async function createJobApplication(
   }
 
   const doc = await JobApplication.create({ job, applicant });
+  await logJobApplied(
+    { id: applicant._id.toString(), name: applicant.name, email: applicant.email },
+    job.title,
+  );
   return toJobApplicationDTO(doc);
 }
 

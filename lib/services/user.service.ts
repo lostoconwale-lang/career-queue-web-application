@@ -28,6 +28,7 @@ export function toUserDTO(u: UserHydrated): UserDTO {
     status: u.status,
     registrationType: u.registrationType,
     adminVerified: u.adminVerified,
+    emailVerified: u.emailVerified,
     createdAt: u.createdAt.toISOString(),
     updatedAt: u.updatedAt.toISOString(),
   };

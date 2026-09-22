@@ -40,6 +40,9 @@ export interface UserDoc {
   // Same pattern, for "forgot password" links.
   passwordResetTokenHash?: string;
   passwordResetExpires?: Date;
+  // Flips true the first time credentials or Google sign-in succeed — gates
+  // the one-time "first login" admin alert so repeat logins stay quiet.
+  hasLoggedInBefore: boolean;
   // Lowercase "email name mobile" — the only field admin list search queries.
   searchKeyword: string;
   createdAt: Date;
@@ -73,6 +76,7 @@ const userSchema = new Schema<UserDoc, UserModel>(
     emailVerificationExpires: { type: Date, select: false },
     passwordResetTokenHash: { type: String, select: false },
     passwordResetExpires: { type: Date, select: false },
+    hasLoggedInBefore: { type: Boolean, required: true, default: false },
     searchKeyword: { type: String, required: true, select: false },
   },
   { timestamps: true },

@@ -8,6 +8,7 @@ export interface UserDTO {
   status: AccountStatus;
   registrationType: RegistrationType;
   adminVerified: boolean;
+  emailVerified: boolean;
   createdAt: string;
   updatedAt: string;
 }

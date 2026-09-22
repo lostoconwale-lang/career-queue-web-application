@@ -11,6 +11,7 @@ import Logo from "@/app/_components/Logo";
 import { ConfirmDialog } from "@/app/_components/ConfirmDialog";
 import {
   Activity,
+  Bell,
   Briefcase,
   Buildings,
   Chevron,
@@ -37,6 +38,10 @@ import {
   UserRound,
   UsersRound,
 } from "@/app/_components/Icons";
+import { redirectOnDenied } from "@/lib/auth-redirect";
+import { formatRelativeTime } from "@/lib/date";
+import { ALERT_TYPE_LABELS, type AlertDTO } from "@/types/alert";
+import type { ApiResponse } from "@/types/api";
 
 type Icon = ComponentType<{ className?: string }>;
 type NavLink = { label: string; href: Route; icon: Icon };
@@ -52,6 +57,7 @@ const NAV: NavEntry[] = [
   { label: "Companies", href: "/admin/companies", icon: Buildings },
   { label: "Jobs", href: "/admin/jobs", icon: Briefcase },
   { label: "Applications", href: "/admin/applications", icon: Mail },
+  { label: "Alerts", href: "/admin/alerts", icon: Bell },
   {
     label: "Manage content",
     icon: Grid,
@@ -95,10 +101,38 @@ export function AdminShell({
   const [open, setOpen] = useState(false);
   const [confirmingLogout, setConfirmingLogout] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+  const [unreadAlerts, setUnreadAlerts] = useState(0);
+  const [recentAlerts, setRecentAlerts] = useState<AlertDTO[]>([]);
 
   function logout() {
     setSigningOut(true);
     void signOut({ callbackUrl: "/admin/login" });
+  }
+
+  // Polls rather than pushing — simplest thing that keeps the bell fresh
+  // without a websocket/SSE layer for what's a low-frequency admin feed.
+  useEffect(() => {
+    let active = true;
+    async function poll() {
+      const res = await fetch("/api/v1/admin/alerts/unread-count", { cache: "no-store" });
+      if (redirectOnDenied(res)) return;
+      const json = (await res.json()) as ApiResponse<{ count: number; recent: AlertDTO[] }>;
+      if (active && json.success) {
+        setUnreadAlerts(json.data.count);
+        setRecentAlerts(json.data.recent);
+      }
+    }
+    void poll();
+    const interval = setInterval(poll, 30_000);
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
+  }, []);
+
+  function markAllAlertsRead() {
+    setUnreadAlerts(0);
+    void fetch("/api/v1/admin/alerts/read-all", { method: "POST" });
   }
 
   return (
@@ -147,6 +181,7 @@ export function AdminShell({
                 link={entry}
                 active={pathname.startsWith(entry.href)}
                 onNavigate={() => setOpen(false)}
+                badge={entry.href === "/admin/alerts" ? unreadAlerts : undefined}
               />
             ),
           )}
@@ -173,7 +208,14 @@ export function AdminShell({
             <Menu className="h-6 w-6" />
           </button>
 
-          <ProfileMenu name={name} onLogout={() => setConfirmingLogout(true)} />
+          <div className="ml-auto flex items-center gap-2">
+            <AlertsMenu
+              count={unreadAlerts}
+              recent={recentAlerts}
+              onMarkAllRead={markAllAlertsRead}
+            />
+            <ProfileMenu name={name} onLogout={() => setConfirmingLogout(true)} />
+          </div>
         </header>
 
         <main className="flex-1">{children}</main>
@@ -242,10 +284,12 @@ function NavItem({
   link,
   active,
   onNavigate,
+  badge,
 }: {
   link: NavLink;
   active: boolean;
   onNavigate: () => void;
+  badge?: number;
 }) {
   return (
     <Link
@@ -258,7 +302,123 @@ function NavItem({
     >
       <link.icon className="h-5 w-5" />
       {link.label}
+      {badge ? (
+        <span className="bg-coral text-surface ml-auto grid h-5 min-w-5 place-items-center rounded-full px-1 text-xs font-semibold">
+          {badge > 99 ? "99+" : badge}
+        </span>
+      ) : null}
     </Link>
+  );
+}
+
+function AlertsMenu({
+  count,
+  recent,
+  onMarkAllRead,
+}: {
+  count: number;
+  recent: AlertDTO[];
+  onMarkAllRead: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointer = (event: MouseEvent) => {
+      if (ref.current && !ref.current.contains(event.target as Node)) setOpen(false);
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", onPointer);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onPointer);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  return (
+    <div
+      ref={ref}
+      className="relative"
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+    >
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        onFocus={() => setOpen(true)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label="Alerts"
+        className="border-line bg-surface text-ink hover:border-brand/40 relative grid h-9 w-9 place-items-center rounded-full border transition-colors"
+      >
+        <Bell className="h-4.5 w-4.5" />
+        {count > 0 ? (
+          <span className="bg-coral border-surface absolute -top-1 -right-1 grid h-4.5 min-w-4.5 place-items-center rounded-full border-2 px-0.5 text-[10px] font-bold text-white">
+            {count > 9 ? "9+" : count}
+          </span>
+        ) : null}
+      </button>
+
+      {open ? (
+        // `pt-2` bridges the visual gap so hovering button → menu doesn't close it.
+        <div className="absolute top-full right-0 pt-2">
+          <div
+            role="menu"
+            className="border-line bg-surface shadow-lift w-80 rounded-2xl border p-1.5"
+          >
+            <div className="flex items-center justify-between px-3 py-2">
+              <p className="text-ink text-sm font-semibold">Alerts</p>
+              {count > 0 ? (
+                <button
+                  type="button"
+                  onClick={onMarkAllRead}
+                  className="text-brand text-xs font-semibold hover:underline"
+                >
+                  Mark all as read
+                </button>
+              ) : null}
+            </div>
+            <div className="bg-line mx-1 my-1 h-px" />
+
+            {recent.length === 0 ? (
+              <p className="text-muted px-3 py-6 text-center text-sm">No alerts yet.</p>
+            ) : (
+              <div className="max-h-80 overflow-y-auto">
+                {recent.map((alert) => (
+                  <div key={alert.id} className="rounded-xl px-3 py-2.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-brand text-xs font-semibold">
+                        {ALERT_TYPE_LABELS[alert.type]}
+                      </span>
+                      <span className="text-muted shrink-0 text-xs">
+                        {formatRelativeTime(alert.createdAt)}
+                      </span>
+                    </div>
+                    <p className={`mt-0.5 text-sm ${alert.read ? "text-muted" : "text-ink font-medium"}`}>
+                      {alert.message}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="bg-line mx-1 my-1 h-px" />
+            <Link
+              href="/admin/alerts"
+              role="menuitem"
+              onClick={() => setOpen(false)}
+              className="text-ink hover:bg-cream flex items-center justify-center rounded-xl px-3 py-2 text-sm font-medium transition-colors"
+            >
+              View all alerts
+            </Link>
+          </div>
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -286,7 +446,7 @@ function ProfileMenu({ name, onLogout }: { name: string; onLogout: () => void })
   return (
     <div
       ref={ref}
-      className="relative ml-auto"
+      className="relative"
       onMouseEnter={() => setOpen(true)}
       onMouseLeave={() => setOpen(false)}
     >
