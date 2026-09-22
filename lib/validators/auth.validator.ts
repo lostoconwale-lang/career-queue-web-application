@@ -61,6 +61,14 @@ export const refreshBodySchema = z.object({
 });
 export type RefreshBody = z.infer<typeof refreshBodySchema>;
 
+/* --------------------------- email verification -------------------------- */
+
+export const verifyEmailBodySchema = z.object({ token: z.string().min(1) });
+export type VerifyEmailBody = z.infer<typeof verifyEmailBodySchema>;
+
+export const resendVerificationBodySchema = z.object({ email: emailInputSchema });
+export type ResendVerificationBody = z.infer<typeof resendVerificationBodySchema>;
+
 /* --------------------- google onboarding (step 2) ---------------------- */
 
 // Body accepted by POST /api/v1/auth/complete-profile — adds the mobile number

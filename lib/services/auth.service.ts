@@ -3,6 +3,9 @@ import "server-only";
 import { ConflictError, ForbiddenError, UnauthorizedError } from "@/lib/api/errors";
 import { hashPassword, verifyPassword } from "@/lib/auth/password";
 import { issueTokenPair, verifyRefreshToken } from "@/lib/auth/jwt";
+import { createVerificationToken, hashVerificationToken } from "@/lib/auth/verification-token";
+import { env } from "@/config/env";
+import { sendVerificationEmail } from "@/lib/email/send-verification-email";
 import { User } from "@/lib/models/user.model";
 import { adminSessionValid } from "@/lib/services/admin.service";
 import { toUserDTO } from "@/lib/services/user.service";
@@ -10,8 +13,32 @@ import type { CompleteProfileBody, LoginBody, RegisterBody } from "@/lib/validat
 import type { TokenPair } from "@/types/auth";
 import type { UserDTO } from "@/types/user";
 
+// Builds the token, saves its hash on the user, and emails the raw one.
+// Registration must not fail because the email provider hiccuped, so send
+// errors are logged, not thrown — the user can request another one later via
+// resendVerificationEmail.
+async function issueAndSendVerificationEmail(user: {
+  _id: { toString(): string };
+  name: string;
+  email: string;
+}): Promise<void> {
+  const { raw, hash, expires } = createVerificationToken();
+  await User.updateOne(
+    { _id: user._id },
+    { emailVerificationTokenHash: hash, emailVerificationExpires: expires },
+  );
+
+  const verifyUrl = `${env.NEXT_PUBLIC_APP_URL}/verify-email?token=${raw}`;
+  try {
+    await sendVerificationEmail({ to: user.email, name: user.name, verifyUrl });
+  } catch (error) {
+    console.error("[auth] failed to send verification email:", error);
+  }
+}
+
 // Creates a pending account. No tokens are issued — an admin must approve it
-// (adminVerified) before it can sign in.
+// (adminVerified) before it can sign in. A verification email goes out
+// separately (emailVerified), which isn't currently a login gate.
 export async function registerUser(body: RegisterBody): Promise<{ user: UserDTO }> {
   if (await User.exists({ email: body.email })) {
     throw new ConflictError("An account with this email already exists");
@@ -27,7 +54,34 @@ export async function registerUser(body: RegisterBody): Promise<{ user: UserDTO 
     registrationType: "manual",
     adminVerified: false,
   });
+
+  await issueAndSendVerificationEmail(doc);
+
   return { user: toUserDTO(doc) };
+}
+
+// POST /api/v1/auth/verify-email — the link from the email calls this.
+export async function verifyEmailToken(rawToken: string): Promise<void> {
+  const user = await User.findOne({
+    emailVerificationTokenHash: hashVerificationToken(rawToken),
+    emailVerificationExpires: { $gt: new Date() },
+  }).select("+emailVerificationTokenHash +emailVerificationExpires");
+
+  if (!user) throw new UnauthorizedError("This verification link is invalid or has expired");
+
+  user.emailVerified = true;
+  user.emailVerificationTokenHash = undefined;
+  user.emailVerificationExpires = undefined;
+  await user.save();
+}
+
+// POST /api/v1/auth/resend-verification — lets a user request a fresh link.
+// Silently no-ops for unknown emails or already-verified accounts so this
+// can't be used to probe which addresses have accounts.
+export async function resendVerificationEmail(email: string): Promise<void> {
+  const user = await User.findOne({ email });
+  if (!user || user.emailVerified) return;
+  await issueAndSendVerificationEmail(user);
 }
 
 // First Google sign-in creates the account (no phone yet); a matching email just

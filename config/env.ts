@@ -23,6 +23,9 @@ const serverSchema = z.object({
   R2_SECRET_ACCESS_KEY: z.string().min(1),
   R2_BUCKET_NAME: z.string().min(1),
   R2_ENDPOINT: z.string().url(),
+  RESEND_API_KEY: z.string().min(1),
+  // "Name <address@domain>" — the From header on every outgoing email.
+  EMAIL_FROM: z.string().min(1),
 });
 
 const clientSchema = z.object({

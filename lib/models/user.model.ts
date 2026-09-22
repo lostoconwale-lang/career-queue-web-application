@@ -31,6 +31,12 @@ export interface UserDoc {
   registrationType: RegistrationType;
   // An admin must approve every account before it can sign in.
   adminVerified: boolean;
+  // Independent of adminVerified — confirms the address actually belongs to
+  // the user. Not currently a login gate, just a trust signal.
+  emailVerified: boolean;
+  // sha256 of the raw token emailed to the user; never store the raw token.
+  emailVerificationTokenHash?: string;
+  emailVerificationExpires?: Date;
   // Lowercase "email name mobile" — the only field admin list search queries.
   searchKeyword: string;
   createdAt: Date;
@@ -59,6 +65,9 @@ const userSchema = new Schema<UserDoc, UserModel>(
       default: "manual",
     },
     adminVerified: { type: Boolean, required: true, default: false },
+    emailVerified: { type: Boolean, required: true, default: false },
+    emailVerificationTokenHash: { type: String, select: false },
+    emailVerificationExpires: { type: Date, select: false },
     searchKeyword: { type: String, required: true, select: false },
   },
   { timestamps: true },
@@ -82,6 +91,8 @@ userSchema.index(
 // `_id` index covers it, so no extra index is needed here.
 // Admin list search runs `{ searchKeyword: /q/ }`.
 userSchema.index({ searchKeyword: 1 });
+// Sparse — most users have no pending verification token.
+userSchema.index({ emailVerificationTokenHash: 1 }, { sparse: true });
 
 // In dev, drop the cached model on hot-reload so schema edits take effect
 // without restarting the server. In prod the module evaluates once.
