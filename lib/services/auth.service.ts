@@ -3,15 +3,22 @@ import "server-only";
 import { ConflictError, ForbiddenError, UnauthorizedError } from "@/lib/api/errors";
 import { hashPassword, verifyPassword } from "@/lib/auth/password";
 import { issueTokenPair, verifyRefreshToken } from "@/lib/auth/jwt";
-import { createVerificationToken, hashVerificationToken } from "@/lib/auth/verification-token";
+import { createToken, hashToken } from "@/lib/auth/token";
 import { env } from "@/config/env";
 import { sendVerificationEmail } from "@/lib/email/send-verification-email";
+import {
+  sendPasswordResetEmail,
+  sendPasswordResetUnavailableEmail,
+} from "@/lib/email/send-password-reset-email";
 import { User } from "@/lib/models/user.model";
 import { adminSessionValid } from "@/lib/services/admin.service";
 import { toUserDTO } from "@/lib/services/user.service";
 import type { CompleteProfileBody, LoginBody, RegisterBody } from "@/lib/validators/auth.validator";
 import type { TokenPair } from "@/types/auth";
 import type { UserDTO } from "@/types/user";
+
+const EMAIL_VERIFICATION_TTL_MS = 24 * 60 * 60 * 1000; // 24h
+const PASSWORD_RESET_TTL_MS = 60 * 60 * 1000; // 1h — shorter-lived, more sensitive
 
 // Builds the token, saves its hash on the user, and emails the raw one.
 // Registration must not fail because the email provider hiccuped, so send
@@ -22,7 +29,7 @@ async function issueAndSendVerificationEmail(user: {
   name: string;
   email: string;
 }): Promise<void> {
-  const { raw, hash, expires } = createVerificationToken();
+  const { raw, hash, expires } = createToken(EMAIL_VERIFICATION_TTL_MS);
   await User.updateOne(
     { _id: user._id },
     { emailVerificationTokenHash: hash, emailVerificationExpires: expires },
@@ -63,7 +70,7 @@ export async function registerUser(body: RegisterBody): Promise<{ user: UserDTO 
 // POST /api/v1/auth/verify-email — the link from the email calls this.
 export async function verifyEmailToken(rawToken: string): Promise<void> {
   const user = await User.findOne({
-    emailVerificationTokenHash: hashVerificationToken(rawToken),
+    emailVerificationTokenHash: hashToken(rawToken),
     emailVerificationExpires: { $gt: new Date() },
   }).select("+emailVerificationTokenHash +emailVerificationExpires");
 
@@ -82,6 +89,59 @@ export async function resendVerificationEmail(email: string): Promise<void> {
   const user = await User.findOne({ email });
   if (!user || user.emailVerified) return;
   await issueAndSendVerificationEmail(user);
+}
+
+// POST /api/v1/auth/forgot-password — always no-ops silently for an unknown
+// email so this can't be used to probe which addresses have accounts. A
+// Google-only account (no passwordHash) gets an explanatory email instead of
+// a reset link, since there's no password to reset.
+export async function requestPasswordReset(email: string): Promise<void> {
+  const user = await User.findOne({ email }).select("+passwordHash");
+  if (!user) return;
+
+  if (!user.passwordHash) {
+    try {
+      await sendPasswordResetUnavailableEmail({ to: user.email, name: user.name });
+    } catch (error) {
+      console.error("[auth] failed to send password-reset-unavailable email:", error);
+    }
+    return;
+  }
+
+  const { raw, hash, expires } = createToken(PASSWORD_RESET_TTL_MS);
+  await User.updateOne(
+    { _id: user._id },
+    { passwordResetTokenHash: hash, passwordResetExpires: expires },
+  );
+
+  const resetUrl = `${env.NEXT_PUBLIC_APP_URL}/reset-password?token=${raw}`;
+  try {
+    await sendPasswordResetEmail({ to: user.email, name: user.name, resetUrl });
+  } catch (error) {
+    console.error("[auth] failed to send password-reset email:", error);
+  }
+}
+
+// POST /api/v1/auth/reset-password — the link from the email lands the user
+// on a form that calls this with the new password.
+export async function resetPassword({
+  token,
+  password,
+}: {
+  token: string;
+  password: string;
+}): Promise<void> {
+  const user = await User.findOne({
+    passwordResetTokenHash: hashToken(token),
+    passwordResetExpires: { $gt: new Date() },
+  }).select("+passwordResetTokenHash +passwordResetExpires");
+
+  if (!user) throw new UnauthorizedError("This reset link is invalid or has expired");
+
+  user.passwordHash = await hashPassword(password);
+  user.passwordResetTokenHash = undefined;
+  user.passwordResetExpires = undefined;
+  await user.save();
 }
 
 // First Google sign-in creates the account (no phone yet); a matching email just

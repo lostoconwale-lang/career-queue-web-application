@@ -37,6 +37,9 @@ export interface UserDoc {
   // sha256 of the raw token emailed to the user; never store the raw token.
   emailVerificationTokenHash?: string;
   emailVerificationExpires?: Date;
+  // Same pattern, for "forgot password" links.
+  passwordResetTokenHash?: string;
+  passwordResetExpires?: Date;
   // Lowercase "email name mobile" — the only field admin list search queries.
   searchKeyword: string;
   createdAt: Date;
@@ -68,6 +71,8 @@ const userSchema = new Schema<UserDoc, UserModel>(
     emailVerified: { type: Boolean, required: true, default: false },
     emailVerificationTokenHash: { type: String, select: false },
     emailVerificationExpires: { type: Date, select: false },
+    passwordResetTokenHash: { type: String, select: false },
+    passwordResetExpires: { type: Date, select: false },
     searchKeyword: { type: String, required: true, select: false },
   },
   { timestamps: true },
@@ -91,8 +96,9 @@ userSchema.index(
 // `_id` index covers it, so no extra index is needed here.
 // Admin list search runs `{ searchKeyword: /q/ }`.
 userSchema.index({ searchKeyword: 1 });
-// Sparse — most users have no pending verification token.
+// Sparse — most users have no pending verification/reset token.
 userSchema.index({ emailVerificationTokenHash: 1 }, { sparse: true });
+userSchema.index({ passwordResetTokenHash: 1 }, { sparse: true });
 
 // In dev, drop the cached model on hot-reload so schema edits take effect
 // without restarting the server. In prod the module evaluates once.

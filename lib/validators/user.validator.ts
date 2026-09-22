@@ -66,15 +66,18 @@ export const setUserPasswordFormSchema = z
   })
   .transform((v) => ({ password: v.password }));
 
-// Fields a user may change on their own record.
+// Fields a user may change on their own record. Phone and email are the
+// identity a login and an admin's approval are tied to, so only an admin can
+// change those (below) — a signed-in user can only ever update their name.
 const selfFields = z.object({
   name: z.string().trim().min(1).max(120),
-  phone: phoneSchema,
-  email: emailSchema,
 });
 
 // Superset an admin may change.
-const adminFields = selfFields.extend({
+const adminFields = z.object({
+  name: z.string().trim().min(1).max(120),
+  phone: phoneSchema,
+  email: emailSchema,
   status: z.enum(ACCOUNT_STATUSES),
   adminVerified: z.boolean(),
 });

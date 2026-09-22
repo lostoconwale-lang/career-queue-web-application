@@ -134,9 +134,19 @@ export function renderEmailHtml(brand: EmailBrand, content: EmailContent): strin
       ${escapeHtml(preheader)}
     </div>
 
+    <!--[if gte mso 9]>
+    <v:background xmlns:v="urn:schemas-microsoft-com:vml" fill="t">
+      <v:fill type="frame" src="${appUrl}/email/background.jpg" color="#fbf7f1" />
+    </v:background>
+    <![endif]-->
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #fbf7f1;">
       <tr>
-        <td align="center" style="padding: 40px 16px;">
+        <td
+          align="center"
+          background="${appUrl}/email/background.jpg"
+          bgcolor="#fbf7f1"
+          style="padding: 40px 16px; background-image: url('${appUrl}/email/background.jpg'); background-repeat: no-repeat; background-position: top center; background-size: cover;"
+        >
           <table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0" style="width: 560px; max-width: 100%;">
             <!-- header: logo + site name -->
             <tr>

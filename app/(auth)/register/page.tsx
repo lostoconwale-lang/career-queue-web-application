@@ -7,7 +7,8 @@ import { useRouter } from "next/navigation";
 
 import { AuthField } from "@/app/_components/AuthField";
 import { ConfirmDialog } from "@/app/_components/ConfirmDialog";
-import { AuthDivider, GoogleButton } from "@/app/_components/GoogleButton";
+// Google sign-in is disabled for now — re-enable this import when it ships.
+// import { AuthDivider, GoogleButton } from "@/app/_components/GoogleButton";
 import { Arrow } from "@/app/_components/Icons";
 import { registerFormSchema } from "@/lib/validators/auth.validator";
 import type { ApiResponse } from "@/types/api";
@@ -157,8 +158,9 @@ export default function RegisterPage() {
         </button>
       </form>
 
+      {/* Google sign-in is disabled for now — re-enable when it ships.
       <AuthDivider />
-      <GoogleButton label="Sign up with Google" />
+      <GoogleButton label="Sign up with Google" /> */}
 
       <p className="text-muted mt-8 text-center text-sm">
         Already have an account?{" "}

@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Route } from "next";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
+import { signOut } from "next-auth/react";
 
+import { ConfirmDialog } from "./ConfirmDialog";
 import Logo from "./Logo";
-import { Arrow, ChevronRight, Close, Menu, UserRound } from "./Icons";
+import { Arrow, ChevronRight, Close, LogOut, Menu, UserRound } from "./Icons";
 import type { PublicHeaderLinkDTO } from "@/types/public-header";
 
 const panelVariants = {
@@ -36,6 +38,8 @@ export default function Nav({
 }) {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [confirmingLogout, setConfirmingLogout] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
   const visibleLinks = links.filter(
     (link) =>
       link.visibility === "all" ||
@@ -76,6 +80,11 @@ export default function Nav({
 
   const close = () => setMenuOpen(false);
 
+  function logout() {
+    setSigningOut(true);
+    void signOut({ callbackUrl: "/login" });
+  }
+
   return (
     <header className="sticky top-4 z-50 px-5 sm:px-8">
       <nav
@@ -101,18 +110,24 @@ export default function Nav({
         </ul>
 
         <div className="ml-auto hidden items-center gap-2 md:flex">
-          <Link
-            href="/login"
-            className="text-muted hover:text-ink rounded-full px-4 py-2 text-sm font-medium transition-colors"
-          >
-            Sign in
-          </Link>
-          <Link
-            href="/register"
-            className="bg-ink text-surface shadow-soft rounded-full px-5 py-2.5 text-sm font-semibold transition-transform hover:-translate-y-0.5"
-          >
-            Register
-          </Link>
+          {isAuthenticated ? (
+            <AccountMenu onLogout={() => setConfirmingLogout(true)} />
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="text-muted hover:text-ink rounded-full px-4 py-2 text-sm font-medium transition-colors"
+              >
+                Sign in
+              </Link>
+              <Link
+                href="/register"
+                className="bg-ink text-surface shadow-soft rounded-full px-5 py-2.5 text-sm font-semibold transition-transform hover:-translate-y-0.5"
+              >
+                Register
+              </Link>
+            </>
+          )}
         </div>
 
         <button
@@ -180,27 +195,138 @@ export default function Nav({
                 variants={itemVariants}
                 className="border-line flex items-center gap-2.5 border-t p-3"
               >
-                <Link
-                  href="/login"
-                  onClick={close}
-                  className="border-line text-ink hover:bg-cream flex flex-1 items-center justify-center gap-2 rounded-full border py-3 text-sm font-semibold transition-colors"
-                >
-                  <UserRound className="h-4 w-4" />
-                  Sign in
-                </Link>
-                <Link
-                  href="/register"
-                  onClick={close}
-                  className="from-brand to-coral text-surface shadow-soft flex flex-1 items-center justify-center gap-2 rounded-full bg-linear-to-r py-3 text-sm font-semibold transition-transform hover:-translate-y-0.5"
-                >
-                  Register
-                  <Arrow className="h-4 w-4" />
-                </Link>
+                {isAuthenticated ? (
+                  <>
+                    <Link
+                      href="/profile"
+                      onClick={close}
+                      className="from-brand to-coral text-surface shadow-soft flex flex-1 items-center justify-center gap-2 rounded-full bg-linear-to-r py-3 text-sm font-semibold transition-transform hover:-translate-y-0.5"
+                    >
+                      <UserRound className="h-4 w-4" />
+                      Your profile
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        close();
+                        setConfirmingLogout(true);
+                      }}
+                      className="border-line text-coral hover:bg-coral/10 flex flex-1 items-center justify-center gap-2 rounded-full border py-3 text-sm font-semibold transition-colors"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Log out
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      href="/login"
+                      onClick={close}
+                      className="border-line text-ink hover:bg-cream flex flex-1 items-center justify-center gap-2 rounded-full border py-3 text-sm font-semibold transition-colors"
+                    >
+                      <UserRound className="h-4 w-4" />
+                      Sign in
+                    </Link>
+                    <Link
+                      href="/register"
+                      onClick={close}
+                      className="from-brand to-coral text-surface shadow-soft flex flex-1 items-center justify-center gap-2 rounded-full bg-linear-to-r py-3 text-sm font-semibold transition-transform hover:-translate-y-0.5"
+                    >
+                      Register
+                      <Arrow className="h-4 w-4" />
+                    </Link>
+                  </>
+                )}
               </motion.div>
             </motion.div>
           </>
         ) : null}
       </AnimatePresence>
+
+      <ConfirmDialog
+        open={confirmingLogout}
+        tone="danger"
+        busy={signingOut}
+        title="Log out?"
+        description="You'll need to log in again to continue."
+        confirmLabel="Log out"
+        onConfirm={logout}
+        onCancel={() => setConfirmingLogout(false)}
+      />
     </header>
+  );
+}
+
+function AccountMenu({ onLogout }: { onLogout: () => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointer = (event: MouseEvent) => {
+      if (ref.current && !ref.current.contains(event.target as Node)) setOpen(false);
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", onPointer);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onPointer);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  return (
+    <div
+      ref={ref}
+      className="relative"
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+    >
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        onFocus={() => setOpen(true)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label="Account menu"
+        className="border-line bg-surface text-ink hover:border-brand/40 grid h-11 w-11 place-items-center rounded-full border transition-colors"
+      >
+        <UserRound className="h-5 w-5" />
+      </button>
+
+      {open ? (
+        // `pt-2` bridges the visual gap so hovering button → menu doesn't close it.
+        <div className="absolute top-full right-0 pt-2">
+          <div
+            role="menu"
+            className="border-line bg-surface shadow-lift w-48 rounded-2xl border p-1.5"
+          >
+            <Link
+              href="/profile"
+              role="menuitem"
+              onClick={() => setOpen(false)}
+              className="text-ink hover:bg-cream flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium transition-colors"
+            >
+              <UserRound className="h-4 w-4" />
+              Your profile
+            </Link>
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                setOpen(false);
+                onLogout();
+              }}
+              className="text-coral hover:bg-coral/10 flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium transition-colors"
+            >
+              <LogOut className="h-4 w-4" />
+              Log out
+            </button>
+          </div>
+        </div>
+      ) : null}
+    </div>
   );
 }

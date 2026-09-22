@@ -69,6 +69,27 @@ export type VerifyEmailBody = z.infer<typeof verifyEmailBodySchema>;
 export const resendVerificationBodySchema = z.object({ email: emailInputSchema });
 export type ResendVerificationBody = z.infer<typeof resendVerificationBodySchema>;
 
+/* ----------------------------- password reset ----------------------------- */
+
+export const forgotPasswordBodySchema = z.object({ email: emailInputSchema });
+export type ForgotPasswordBody = z.infer<typeof forgotPasswordBodySchema>;
+
+export const resetPasswordBodySchema = z.object({
+  token: z.string().min(1),
+  password: passwordSchema,
+});
+export type ResetPasswordBody = z.infer<typeof resetPasswordBodySchema>;
+
+// The reset-password form collects a confirmation too; shape it into the body.
+export const resetPasswordFormSchema = z
+  .object({ token: z.string().min(1), password: formPassword, confirm: z.string() })
+  .refine((v) => v.password === v.confirm, {
+    message: "Passwords don't match",
+    path: ["confirm"],
+  })
+  .transform((v): ResetPasswordBody => ({ token: v.token, password: v.password }));
+export type ResetPasswordFormValues = z.infer<typeof resetPasswordFormSchema>;
+
 /* --------------------- google onboarding (step 2) ---------------------- */
 
 // Body accepted by POST /api/v1/auth/complete-profile — adds the mobile number

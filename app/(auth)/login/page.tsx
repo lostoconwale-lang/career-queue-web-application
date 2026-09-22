@@ -7,7 +7,9 @@ import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 
 import { AuthField } from "@/app/_components/AuthField";
-import { AuthDivider, GoogleButton } from "@/app/_components/GoogleButton";
+// Google sign-in is disabled for now — re-enable this import when it ships.
+// import { AuthDivider, GoogleButton } from "@/app/_components/GoogleButton";
+import { ForgotPasswordDialog } from "@/app/_components/ForgotPasswordDialog";
 import { Arrow } from "@/app/_components/Icons";
 import { buildLoginPayload, loginFormSchema } from "@/lib/validators/auth.validator";
 import type { ApiResponse } from "@/types/api";
@@ -24,6 +26,7 @@ export default function LoginPage() {
   const [errors, setErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [forgotOpen, setForgotOpen] = useState(false);
 
   function switchMethod(next: Method) {
     setMethod(next);
@@ -151,16 +154,25 @@ export default function LoginPage() {
           />
         )}
 
-        <AuthField
-          label="Password"
-          name="password"
-          type="password"
-          autoComplete="current-password"
-          placeholder="••••••••"
-          value={password}
-          error={errors.password}
-          onChange={(event) => setPassword(event.target.value)}
-        />
+        <div>
+          <AuthField
+            label="Password"
+            name="password"
+            type="password"
+            autoComplete="current-password"
+            placeholder="••••••••"
+            value={password}
+            error={errors.password}
+            onChange={(event) => setPassword(event.target.value)}
+          />
+          <button
+            type="button"
+            onClick={() => setForgotOpen(true)}
+            className="text-brand mt-2 text-sm font-medium hover:underline"
+          >
+            Forgot password?
+          </button>
+        </div>
 
         <button
           type="submit"
@@ -174,8 +186,9 @@ export default function LoginPage() {
         </button>
       </form>
 
+      {/* Google sign-in is disabled for now — re-enable when it ships.
       <AuthDivider />
-      <GoogleButton />
+      <GoogleButton /> */}
 
       <p className="text-muted mt-8 text-center text-sm">
         Don’t have an account??{" "}
@@ -183,6 +196,8 @@ export default function LoginPage() {
           Create one
         </Link>
       </p>
+
+      <ForgotPasswordDialog open={forgotOpen} onClose={() => setForgotOpen(false)} />
     </div>
   );
 }
