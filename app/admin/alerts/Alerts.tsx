@@ -127,9 +127,19 @@ export function Alerts() {
       key: "message",
       header: "Alert",
       cell: (alert) => (
-        <span className={alert.read ? "text-muted" : "text-ink font-medium"}>
-          {alert.message}
-        </span>
+        <div>
+          <span className={alert.read ? "text-muted" : "text-ink font-medium"}>
+            {alert.message}
+          </span>
+          {alert.read && alert.readBy ? (
+            <p
+              className="text-muted mt-0.5 text-xs"
+              title={alert.readAt ? formatDateTime(alert.readAt) : undefined}
+            >
+              Read by {alert.readBy.name} ({alert.readBy.email})
+            </p>
+          ) : null}
+        </div>
       ),
     },
     {

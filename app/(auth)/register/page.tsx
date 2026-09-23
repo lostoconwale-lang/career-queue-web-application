@@ -80,7 +80,12 @@ export default function RegisterPage() {
   }
 
   if (registeredEmail) {
-    return <VerifyPhoneStep email={registeredEmail} onVerified={() => router.push("/pending")} />;
+    return (
+      <VerifyPhoneStep
+        email={registeredEmail}
+        onVerified={() => router.push(`/pending?email=${encodeURIComponent(registeredEmail)}`)}
+      />
+    );
   }
 
   return (
@@ -145,7 +150,7 @@ export default function RegisterPage() {
 
         <button
           type="submit"
-          disabled={submitting || confirming}
+          disabled={submitting}
           className="group bg-brand text-surface shadow-soft flex w-full items-center justify-center gap-2 rounded-full px-7 py-3.5 text-base font-semibold transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
         >
           {submitting ? "Creating account…" : "Create account"}
@@ -165,16 +170,6 @@ export default function RegisterPage() {
           Log in
         </Link>
       </p>
-
-      <ConfirmDialog
-        open={confirming}
-        busy={submitting}
-        title="Create your account?"
-        description={`We'll set up an account for ${form.email} and send it for approval.`}
-        confirmLabel="Create account"
-        onConfirm={createAccount}
-        onCancel={() => setConfirming(false)}
-      />
     </div>
   );
 }

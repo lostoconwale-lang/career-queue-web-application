@@ -21,6 +21,11 @@ export interface AlertDoc {
   userName: string;
   userEmail: string;
   read: boolean;
+  // Who marked it read, and when — cleared if it's flipped back to unread.
+  readByAdminId?: Types.ObjectId;
+  readByAdminName?: string;
+  readByAdminEmail?: string;
+  readAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -36,6 +41,10 @@ const alertSchema = new Schema<AlertDoc, AlertModel>(
     userName: { type: String, required: true },
     userEmail: { type: String, required: true },
     read: { type: Boolean, required: true, default: false },
+    readByAdminId: { type: Schema.Types.ObjectId, ref: "Admin" },
+    readByAdminName: { type: String },
+    readByAdminEmail: { type: String },
+    readAt: { type: Date },
   },
   { timestamps: true },
 );

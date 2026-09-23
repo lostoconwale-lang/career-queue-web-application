@@ -19,6 +19,11 @@ function toAlertDTO(a: AlertHydrated): AlertDTO {
     userName: a.userName,
     userEmail: a.userEmail,
     read: a.read,
+    readBy:
+      a.read && a.readByAdminName
+        ? { name: a.readByAdminName, email: a.readByAdminEmail ?? "—" }
+        : null,
+    readAt: a.readAt ? a.readAt.toISOString() : null,
     createdAt: a.createdAt.toISOString(),
   };
 }
@@ -76,15 +81,40 @@ export async function listRecentAlerts(limit: number): Promise<AlertDTO[]> {
   return docs.map(toAlertDTO);
 }
 
-export async function markAlertRead(id: string, read: boolean): Promise<AlertDTO> {
+export async function markAlertRead(
+  id: string,
+  read: boolean,
+  admin: AlertUser,
+): Promise<AlertDTO> {
   if (!Types.ObjectId.isValid(id)) throw new NotFoundError("Alert");
   const doc = await Alert.findById(id);
   if (!doc) throw new NotFoundError("Alert");
+
   doc.read = read;
+  if (read) {
+    doc.readByAdminId = new Types.ObjectId(admin.id);
+    doc.readByAdminName = admin.name;
+    doc.readByAdminEmail = admin.email;
+    doc.readAt = new Date();
+  } else {
+    doc.readByAdminId = undefined;
+    doc.readByAdminName = undefined;
+    doc.readByAdminEmail = undefined;
+    doc.readAt = undefined;
+  }
   await doc.save();
   return toAlertDTO(doc);
 }
 
-export async function markAllAlertsRead(): Promise<void> {
-  await Alert.updateMany({ read: false }, { read: true });
+export async function markAllAlertsRead(admin: AlertUser): Promise<void> {
+  await Alert.updateMany(
+    { read: false },
+    {
+      read: true,
+      readByAdminId: new Types.ObjectId(admin.id),
+      readByAdminName: admin.name,
+      readByAdminEmail: admin.email,
+      readAt: new Date(),
+    },
+  );
 }

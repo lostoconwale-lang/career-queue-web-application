@@ -23,5 +23,8 @@ export interface AlertDTO {
   userName: string;
   userEmail: string;
   read: boolean;
+  // Which admin marked it read, and when — null while unread.
+  readBy: { name: string; email: string } | null;
+  readAt: string | null;
   createdAt: string;
 }

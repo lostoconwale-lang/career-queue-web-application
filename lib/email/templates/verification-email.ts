@@ -14,7 +14,6 @@ export function renderVerificationEmail(
     subject: `Verify your email for ${brand.siteName}`,
     html: renderEmailHtml(brand, {
       preheader: "Confirm your email address to finish setting up your account.",
-      eyebrow: "Verify your email",
       heading: `Hi ${firstName}, one more step`,
       paragraphs: [
         `Thanks for signing up for ${brand.siteName}. Confirm this is your email address by clicking the button below.`,
